@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts'
 import { useApp } from '../../context/AppContext'
@@ -278,10 +278,40 @@ function GatePassesManager() {
 
 /* ── Main ──────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const { currentUser } = useApp()
+  const { currentUser, setRequests, setGatePasses, addToast } = useApp()
   const isAdmin = currentUser?.type === 'admin'
   const [profileEmp, setProfileEmp] = useState(null)
   const [selectedDemandType, setSelectedDemandType] = useState(null)
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error("Failed to sync dashboard data");
+
+        const data = await response.json();
+        
+        // Update your Global Context with real data from Laravel
+        // Adjust these keys based on your actual API response structure
+        if (data.requests) setRequests(data.requests);
+        if (data.gate_passes) setGatePasses(data.gate_passes);
+        console.log(response)
+
+      } catch (err) {
+        console.error("Dashboard Fetch Error:", err);
+        addToast("Could not sync with server. Showing local data.", "warning");
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className={styles.page}>
