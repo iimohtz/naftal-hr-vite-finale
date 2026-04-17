@@ -537,7 +537,9 @@ export default function DashboardPage() {
               onClearFilter={() => setSelectedDemandType(null)}
             />
           )}
-          {!isAdmin && <GatePassesManager requests={myRequests} />}
+          {!["direction", "department"].includes(currentUser?.unit_type) && (
+            <GatePassesManager requests={myRequests} />
+          )}
         </div>
       </div>
 
