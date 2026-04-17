@@ -29,45 +29,15 @@ function getStoredUser() {
     return null;
   }
 }
+function getAttendanceSessions() {
+  try {
+    return JSON.parse(localStorage.getItem('attendance') || '[]')
+  } catch { return [] }
+}
 
-const WEEK_DATA = [
-  { day: "SUN", enter: "08:00", leave: "16:30", status: "ON TIME" },
-  { day: "MON", enter: "08:15", leave: "16:35", status: "LATE" },
-  { day: "TUE", enter: "07:55", leave: "16:30", status: "EARLY ENTRY" },
-  { day: "WED", enter: "08:00", leave: "16:30", status: "ON TIME" },
-  { day: "THU", enter: "08:05", leave: "16:30", status: "ON TIME" },
-];
 
-const ACTIVITY_LOG = [
-  {
-    icon: "A",
-    text: "APPROVED PAYROLL RUN: SECTOR 4",
-    meta: "Today, 09:14 AM · #0822",
-    tag: "SYSTEM",
-    color: "var(--blue)",
-  },
-  {
-    icon: "U",
-    text: "UPDATED SECURITY PROTOCOLS",
-    meta: "Yesterday, 04:30 PM",
-    tag: "SECURITY",
-    color: "var(--red)",
-  },
-  {
-    icon: "R",
-    text: "REVIEWED LEAVE REQUEST LR-0041",
-    meta: "25 Oct 2023, 08:30 AM",
-    tag: "HR",
-    color: "var(--orange)",
-  },
-  {
-    icon: "G",
-    text: "APPROVED GATE PASS GP-882910",
-    meta: "24 Oct 2023, 07:45 AM",
-    tag: "SECURITY",
-    color: "var(--green)",
-  },
-];
+
+
 
 /* ─── Mini Icons ────────────────────────────────────────────── */
 const IDIcon = () => (
@@ -215,44 +185,47 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [pwdOpen,  setPwdOpen]  = useState(false);
 
-  /*
-   * Merge the AppContext user with whatever the API returned at login.
-   * LoginPage saves:  localStorage.setItem('user', JSON.stringify(data.person))
-   * So data.person may contain: id, firstname, lastname, email, phone,
-   *   location, unit_name, etc.
-   */
-  const storedUser = getStoredUser();
+  const sessions = getAttendanceSessions()
 
-  // Full name: prefer firstname + lastname from DB, fallback to context name
-  const firstName  = storedUser?.firstname  || storedUser?.first_name  || "";
-  const lastName   = storedUser?.lastname   || storedUser?.last_name   || "";
-  const fullName   = firstName && lastName
-    ? `${firstName} ${lastName}`
-    : storedUser?.name || currentUser?.name || "Unknown";
+  // Sort descending, take 5 most recent for the weekly view
+  const recentSessions = [...sessions]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5)
 
-  // Individual fields – DB fields take priority over AppContext fallbacks
-  const userEmail    = storedUser?.email     || currentUser?.email    || "—";
-  const userPhone    = storedUser?.phone     || storedUser?.phone_number || currentUser?.phone || "—";
-  const userLocation = storedUser?.location  || currentUser?.location || "—";
-  const userPosition = storedUser?.unit_name || storedUser?.position  || storedUser?.department || "—";
-  const userId       = storedUser?.id        || currentUser?.id       || "—";
+  // Compute real stats from all sessions
+  const totalSessions  = sessions.length
+  const lateSessions   = sessions.filter(s => s.late_duration && s.late_duration !== '00:00').length
+  const onTimeSessions = totalSessions - lateSessions
+  const efficiency     = totalSessions > 0 ? Math.round((onTimeSessions / totalSessions) * 100) : 0
 
-  // Determine admin from the ADMIN_IDS list using the numeric DB id
-  const numericId = Number(storedUser?.id);
-  const isAdmin   = ADMIN_IDS.includes(numericId) || currentUser?.type === "admin";
+  // Date range label from sessions
+  const sortedDates   = [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const firstDate     = sortedDates[0]?.date
+  const lastDate      = sortedDates[sortedDates.length - 1]?.date
+  const dateRangeLabel = firstDate && lastDate
+    ? `${new Date(firstDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })} – ${new Date(lastDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}`
+    : 'N/A'
 
-  const stats = isAdmin
-    ? { present: 22, total: 30, overtime: "14.5h", efficiency: 98 }
-    : { present: 20, total: 30, overtime: "12.5h", efficiency: 91 };
+  const storedUser   = getStoredUser();
+  const firstName    = storedUser?.firstname  || storedUser?.first_name  || "";
+  const lastName     = storedUser?.lastname   || storedUser?.last_name   || "";
+  const fullName     = firstName && lastName ? `${firstName} ${lastName}` : storedUser?.name || currentUser?.name || "Unknown";
+  const userEmail    = storedUser?.email      || currentUser?.email    || "—";
+  const userPhone    = storedUser?.phone      || storedUser?.phone_number || currentUser?.phone || "—";
+  const userLocation = storedUser?.location   || currentUser?.location || "—";
+  const userPosition = storedUser?.unit_name  || storedUser?.position  || storedUser?.department || "—";
+  const userId       = storedUser?.id         || currentUser?.id       || "—";
+  const numericId    = Number(storedUser?.id);
+  const isAdmin      = ADMIN_IDS.includes(numericId) || currentUser?.type === "admin";
 
   const session = {
-    lastLogin: "25 OCT 2023  08:00 AM",
-    ip:        currentUser?.ip        || "192.168.1.104",
-    sessionId: currentUser?.sessionId || "#NFT-0000-XX",
+    lastLogin: lastDate
+      ? new Date(lastDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase()
+      : "—",
+    ip:        currentUser?.ip        || "—",
+    sessionId: currentUser?.sessionId || "—",
   };
 
-  // Build the identity meta rows in the requested order:
-  // ID → Email → Phone → Location → Position (unit_name)
   const metaRows = [
     { key: "id",       icon: <IDIcon />,       val: userId       },
     { key: "email",    icon: <EmailIcon />,    val: userEmail    },
@@ -280,7 +253,6 @@ export default function ProfilePage() {
         <div className={styles.leftCol}>
           <div className={styles.identityCard}>
             <div className={styles.avatarWrap}>
-              {/* Avatar uses the full name for initials */}
               <Avatar name={fullName} size={88} />
               <div className={styles.avatarBadge}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -288,16 +260,8 @@ export default function ProfilePage() {
                 </svg>
               </div>
             </div>
-
-            {/* Full name from firstname + lastname */}
             <div className={styles.idName}>{fullName.toUpperCase()}</div>
-
-            {/* Role / badge */}
-            <div className={styles.idRole}>
-              {currentUser?.role || storedUser?.role || ""}
-            </div>
-
-            {/* Meta rows: ID, Email, Phone, Location, Position */}
+            <div className={styles.idRole}>{currentUser?.role || storedUser?.role || ""}</div>
             <div className={styles.idMeta}>
               {metaRows.map(({ key, icon, val }) => (
                 <div key={key} className={styles.idMetaRow}>
@@ -308,30 +272,36 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Attendance card */}
+          {/* ── Attendance card — now fully dynamic ── */}
           <div className={styles.attCard}>
             <div className={styles.attHeader}>
               <span className={styles.attTitle}>PERSONAL ATTENDANCE</span>
-              <span className={styles.attBadge}>THIS MONTH</span>
+              <span className={styles.attBadge}>{totalSessions} SESSIONS</span>
             </div>
             <div className={styles.attStats}>
               <div className={styles.attStat}>
-                <span className={styles.attStatLabel}>PRESENT DAYS</span>
-                <span className={styles.attStatVal}>{stats.present}/{stats.total}</span>
+                <span className={styles.attStatLabel}>ON TIME</span>
+                <span className={styles.attStatVal}>{onTimeSessions}/{totalSessions}</span>
               </div>
               <div className={styles.attStat}>
-                <span className={styles.attStatLabel}>OVERTIME</span>
-                <span className={styles.attStatVal} style={{ color: "var(--orange)" }}>
-                  {stats.overtime}
+                <span className={styles.attStatLabel}>LATE</span>
+                <span className={styles.attStatVal} style={{ color: 'var(--red)' }}>
+                  {lateSessions}x
                 </span>
               </div>
             </div>
             <div className={styles.effRow}>
-              <span className={styles.attStatLabel}>EFFICIENCY INDEX</span>
-              <span className={styles.effVal}>{stats.efficiency}%</span>
+              <span className={styles.attStatLabel}>PUNCTUALITY INDEX</span>
+              <span className={styles.effVal}>{efficiency}%</span>
             </div>
             <div className={styles.effTrack}>
-              <div className={styles.effFill} style={{ width: `${stats.efficiency}%` }} />
+              <div
+                className={styles.effFill}
+                style={{
+                  width: `${efficiency}%`,
+                  background: efficiency >= 90 ? 'var(--green)' : efficiency >= 75 ? 'var(--amber)' : 'var(--red)',
+                }}
+              />
             </div>
           </div>
 
@@ -346,7 +316,7 @@ export default function ProfilePage() {
             </div>
             <div className={styles.sessionGrid}>
               <div className={styles.sessionItem}>
-                <span className={styles.sessionLabel}>LAST LOGIN</span>
+                <span className={styles.sessionLabel}>LAST ATTENDANCE</span>
                 <span className={styles.sessionVal}>{session.lastLogin}</span>
               </div>
               <div className={styles.sessionItem}>
@@ -365,54 +335,105 @@ export default function ProfilePage() {
 
         {/* ── Right column ─────────────────────────── */}
         <div className={styles.rightCol}>
+
+          {/* ── Weekly attendance — now from real data ── */}
           <div className={styles.weekCard}>
             <div className={styles.weekHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <CalIcon />
-                <span className={styles.weekTitle}>WEEKLY ATTENDANCE OVERVIEW</span>
+                <span className={styles.weekTitle}>RECENT ATTENDANCE SESSIONS</span>
               </div>
-              <span className={styles.weekRange}>WEEK 43 · OCT 2023 (SUN–THU)</span>
+              <span className={styles.weekRange}>{dateRangeLabel}</span>
             </div>
-            {WEEK_DATA.map((day) => (
-              <div key={day.day} className={styles.weekRow}>
-                <span className={styles.weekDay}>{day.day}</span>
-                <div className={styles.weekTimes}>
-                  <div className={styles.weekTime}>
-                    <span className={styles.weekTimeLabel}>ENTER</span>
-                    <span className={styles.weekTimeVal}>{day.enter}</span>
-                  </div>
-                  <div className={styles.weekTimeDivider}>–</div>
-                  <div className={styles.weekTime}>
-                    <span className={styles.weekTimeLabel}>LEAVE</span>
-                    <span className={styles.weekTimeVal}>{day.leave}</span>
-                  </div>
-                </div>
-                <StatusBadge status={day.status} />
+
+            {recentSessions.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                No attendance data available.
               </div>
-            ))}
+            ) : (
+              recentSessions.map((s, i) => {
+                const isLate   = s.late_duration && s.late_duration !== '00:00'
+                const status   = isLate ? 'LATE' : 'ON TIME'
+                const dayLabel = new Date(s.date).toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase()
+                const dateLbl  = new Date(s.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+
+                return (
+                  <div key={i} className={styles.weekRow}>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 52 }}>
+                      <span className={styles.weekDay}>{dayLabel}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{dateLbl}</span>
+                    </div>
+                    <div className={styles.weekTimes}>
+                      {isLate ? (
+                        <>
+                          <div className={styles.weekTime}>
+                            <span className={styles.weekTimeLabel}>LATE BY</span>
+                            <span className={styles.weekTimeVal} style={{ color: 'var(--red)' }}>
+                              {s.late_duration}
+                            </span>
+                          </div>
+                          {s.late_remark && (
+                            <div className={styles.weekTime} style={{ maxWidth: 200 }}>
+                              <span className={styles.weekTimeLabel}>REMARK</span>
+                              <span className={styles.weekTimeVal} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {s.late_remark}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className={styles.weekTime}>
+                          <span className={styles.weekTimeLabel}>PUNCTUALITY</span>
+                          <span className={styles.weekTimeVal} style={{ color: 'var(--green)' }}>ON TIME</span>
+                        </div>
+                      )}
+                    </div>
+                    <StatusBadge status={status} />
+                  </div>
+                )
+              })
+            )}
           </div>
 
+          {/* ── Activity log — still static for now ── */}
           <div className={styles.logCard}>
             <div className={styles.logHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <ClockIcon />
-                <span className={styles.logTitle}>RECENT ACTIVITY LOG</span>
+                <span className={styles.logTitle}>ALL LATE SESSIONS</span>
               </div>
-              <button className={styles.fullLogBtn}>FULL LOG ›</button>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                {lateSessions} total
+              </span>
             </div>
-            {ACTIVITY_LOG.map((item, i) => (
-              <div key={i} className={styles.logItem}>
-                <div className={styles.logIconWrap} style={{ background: `${item.color}18`, color: item.color }}>
-                  {item.icon}
+            {sessions
+              .filter(s => s.late_duration && s.late_duration !== '00:00')
+              .sort((a, b) => new Date(b.date) - new Date(a.date))
+              .map((s, i) => (
+                <div key={i} className={styles.logItem}>
+                  <div className={styles.logIconWrap} style={{ background: 'var(--red)18', color: 'var(--red)' }}>
+                    L
+                  </div>
+                  <div className={styles.logContent}>
+                    <span className={styles.logText}>
+                      LATE BY {s.late_duration}
+                    </span>
+                    <span className={styles.logMeta}>
+                      {new Date(s.date).toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })}
+                      {s.late_remark ? ` · ${s.late_remark}` : ''}
+                    </span>
+                  </div>
+                  <span className={styles.logTag} style={{ color: 'var(--red)' }}>LATE</span>
                 </div>
-                <div className={styles.logContent}>
-                  <span className={styles.logText}>{item.text}</span>
-                  <span className={styles.logMeta}>{item.meta}</span>
-                </div>
-                <span className={styles.logTag} style={{ color: item.color }}>{item.tag}</span>
+              ))
+            }
+            {lateSessions === 0 && (
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--green)', fontSize: '12px' }}>
+                ✓ No late sessions recorded
               </div>
-            ))}
+            )}
           </div>
+
         </div>
       </div>
 

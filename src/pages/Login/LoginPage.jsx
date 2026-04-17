@@ -48,10 +48,12 @@ export default function LoginPage() {
        * We store BOTH in localStorage so AppContext and ProfilePage can read
        * them on every page load without another API call.
        */
+      localStorage.removeItem('attendance')
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.person));
       localStorage.setItem("unit", JSON.stringify(data.unit ?? null));
       localStorage.setItem("list", JSON.stringify(data.persons_list ?? []));
+      localStorage.setItem("attendance", JSON.stringify(data.attendance_sessions ?? []));
 
       // login() in AppContext reads 'unit' from localStorage, normalizes,
       // sets currentUser with full_name, admin flag, unit_name, etc.
