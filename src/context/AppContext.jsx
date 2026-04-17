@@ -47,6 +47,8 @@ export function normalizeUser(person, unit) {
     position: person.position || "", // e.g. "Directeur Informatique"
     unit_name: unit?.unit_name || "", // e.g. "Direction Informatique"
     unit_id: person.unit_id || null,
+    unit_type:   unit?.unit_type  || '',
+    unit:        unit || null,
     director_id: unit?.director_id || null,
 
     // Auth / role

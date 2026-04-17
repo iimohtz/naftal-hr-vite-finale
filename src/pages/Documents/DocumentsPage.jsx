@@ -731,7 +731,7 @@ function QuickActionPanel() {
       addToast(`${type} submitted successfully.`);
     } catch (err) {
       addToast(`Submitted locally. Sync failed: ${err.message}`, "warning");
-      console.log(err.message)
+      console.log(err.message);
     }
 
     setType("");
@@ -880,10 +880,12 @@ function QuickActionPanel() {
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function DocumentsPage() {
   const [searchParams] = useSearchParams();
+  const { currentUser } = useApp()
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "payroll",
   );
-  const [profileEmp, setProfileEmp] = useState(null); // drawer target
+  const [profileEmp, setProfileEmp] = useState(null);
+  const hideQuickPanel = ['direction', 'department'].includes(currentUser?.unit?.unit_type)
 
   return (
     <div className={styles.page}>
@@ -914,7 +916,7 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      <QuickActionPanel />
+      {!hideQuickPanel && <QuickActionPanel />}
 
       {/* Floating profile drawer — read-only from Documents (no edit/delete) */}
       {profileEmp && (
