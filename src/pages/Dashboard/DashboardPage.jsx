@@ -302,7 +302,7 @@ export default function DashboardPage() {
         // Adjust these keys based on your actual API response structure
         if (data.requests) setRequests(data.requests);
         if (data.gate_passes) setGatePasses(data.gate_passes);
-        console.log(response)
+        console.log(data)
 
       } catch (err) {
         console.error("Dashboard Fetch Error:", err);
