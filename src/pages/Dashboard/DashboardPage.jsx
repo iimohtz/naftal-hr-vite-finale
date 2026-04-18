@@ -447,180 +447,95 @@ function RequestsPanel({ selectedType, onClearFilter }) {
   );
 }
 function RequestDetailModal({ request, onClose }) {
-  const detail = request.detail || {};
+  const detail = request.detail || {}
+
+  const passType    = detail.vacation_type       || detail.pass_type        || request.type        || '—'
+  const dateFrom    = detail.start_date          || detail.date             || request.from         || request.date_from || '—'
+  const dateTo      = detail.end_date            || request.to              || request.date_to      || '—'
+  const exitTime    = detail.exit_time           || request.timeFrom        || request.time_from    || '—'
+  const returnTime  = detail.expected_return_time || request.timeTo         || request.time_to      || '—'
+  const destination = detail.destination         || request.destination     || '—'
+  const reason      = detail.reason              || request.note            || request.justification || '—'
+  const reasonType  = request.reasonType         || request.reason_type     || null
+  const submittedOn = request.submission_date    || request.date            || '—'
+
   return (
-    <Modal
-      isOpen
-      onClose={onClose}
-      title={`REQUEST — #${request.id}`}
-      subtitle={request.type}
-    >
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
-        >
+    <Modal isOpen onClose={onClose} title={`REQUEST — #${request.id}`} subtitle={request.type}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              STATUS
-            </div>
-            <StatusBadge status={request.status.toUpperCase()} />
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>STATUS</div>
+            <StatusBadge status={(request.status || 'PENDING').toUpperCase()} />
           </div>
           <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              TYPE
-            </div>
-            <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-              {request.type || "—"}
-            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>TYPE</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{request.type || '—'}</div>
           </div>
           <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              SUBMISSION DATE
-            </div>
-            <div style={{ fontSize: "0.85rem" }}>
-              {request.submission_date || "—"}
-            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>SUBMITTED ON</div>
+            <div style={{ fontSize: '0.85rem' }}>{submittedOn}</div>
           </div>
-          <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              PASS TYPE
+          {passType && passType !== '—' && (
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>CATEGORY</div>
+              <div style={{ fontSize: '0.85rem', textTransform: 'capitalize' }}>{passType}</div>
             </div>
-            <div style={{ fontSize: "0.85rem" }}>{detail.pass_type || "—"}</div>
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              DATE
+          )}
+          {dateFrom && dateFrom !== '—' && (
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>FROM</div>
+              <div style={{ fontSize: '0.85rem' }}>{dateFrom}</div>
             </div>
-            <div style={{ fontSize: "0.85rem" }}>{detail.date || "—"}</div>
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              EXIT TIME
+          )}
+          {dateTo && dateTo !== '—' && (
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>TO</div>
+              <div style={{ fontSize: '0.85rem' }}>{dateTo}</div>
             </div>
-            <div style={{ fontSize: "0.85rem" }}>{detail.exit_time || "—"}</div>
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              EXPECTED RETURN
+          )}
+          {exitTime && exitTime !== '—' && (
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>EXIT TIME</div>
+              <div style={{ fontSize: '0.85rem' }}>{exitTime}</div>
             </div>
-            <div style={{ fontSize: "0.85rem" }}>
-              {detail.expected_return_time || "—"}
+          )}
+          {returnTime && returnTime !== '—' && (
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>RETURN TIME</div>
+              <div style={{ fontSize: '0.85rem' }}>{returnTime}</div>
             </div>
-          </div>
+          )}
+          {reasonType && (
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>REASON CATEGORY</div>
+              <div style={{ fontSize: '0.85rem', textTransform: 'capitalize' }}>{reasonType}</div>
+            </div>
+          )}
         </div>
 
-        {detail.destination && (
+        {destination && destination !== '—' && (
           <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              DESTINATION
-            </div>
-            <div style={{ fontSize: "0.85rem", whiteSpace: "pre-line" }}>
-              {detail.destination}
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>DESTINATION</div>
+            <div style={{ fontSize: '0.85rem', whiteSpace: 'pre-line' }}>{destination}</div>
+          </div>
+        )}
+
+        {reason && reason !== '—' && (
+          <div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>NOTE / REASON</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5 }}>
+              {reason}
             </div>
           </div>
         )}
 
-        {detail.reason && (
-          <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              REASON
-            </div>
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--text-muted)",
-                fontStyle: "italic",
-              }}
-            >
-              {detail.reason}
-            </div>
-          </div>
-        )}
-
-        {request.justification && (
-          <div>
-            <div
-              style={{
-                fontSize: "0.7rem",
-                color: "var(--text-muted)",
-                marginBottom: 4,
-              }}
-            >
-              JUSTIFICATION
-            </div>
-            <div style={{ fontSize: "0.85rem" }}>{request.justification}</div>
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            paddingTop: 8,
-            borderTop: "1px solid var(--border)",
-          }}
-        >
-          <Button variant="secondary" onClick={onClose}>
-            CLOSE
-          </Button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+          <Button variant="secondary" onClick={onClose}>CLOSE</Button>
         </div>
       </div>
     </Modal>
-  );
+  )
 }
 /* ── Manager Gate Passes ───────────────────────────────────── */
 function GatePassesManager({ requests = [] }) {
