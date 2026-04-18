@@ -9,7 +9,7 @@ import {
   Legend,
 } from "recharts";
 import { useApp } from "../../context/AppContext";
-import { StatusBadge, Avatar } from "../../components/UI/UI";
+import { StatusBadge, Avatar, Button, Modal } from "../../components/UI/UI";
 import EmployeeProfileDrawer from "../../components/EmployeeProfileDrawer/EmployeeProfileDrawer";
 import styles from "./DashboardPage.module.css";
 
@@ -446,22 +446,202 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     </div>
   );
 }
+function RequestDetailModal({ request, onClose }) {
+  const detail = request.detail || {};
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`REQUEST — #${request.id}`}
+      subtitle={request.type}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              STATUS
+            </div>
+            <StatusBadge status={request.status.toUpperCase()} />
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              TYPE
+            </div>
+            <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+              {request.type || "—"}
+            </div>
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              SUBMISSION DATE
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>
+              {request.submission_date || "—"}
+            </div>
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              PASS TYPE
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>{detail.pass_type || "—"}</div>
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              DATE
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>{detail.date || "—"}</div>
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              EXIT TIME
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>{detail.exit_time || "—"}</div>
+          </div>
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              EXPECTED RETURN
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>
+              {detail.expected_return_time || "—"}
+            </div>
+          </div>
+        </div>
 
+        {detail.destination && (
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              DESTINATION
+            </div>
+            <div style={{ fontSize: "0.85rem", whiteSpace: "pre-line" }}>
+              {detail.destination}
+            </div>
+          </div>
+        )}
+
+        {detail.reason && (
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              REASON
+            </div>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+                fontStyle: "italic",
+              }}
+            >
+              {detail.reason}
+            </div>
+          </div>
+        )}
+
+        {request.justification && (
+          <div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              JUSTIFICATION
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>{request.justification}</div>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            paddingTop: 8,
+            borderTop: "1px solid var(--border)",
+          }}
+        >
+          <Button variant="secondary" onClick={onClose}>
+            CLOSE
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 /* ── Manager Gate Passes ───────────────────────────────────── */
 function GatePassesManager({ requests = [] }) {
-  const { gatePasses } = useApp();
+  const [selected, setSelected] = useState(null);
+
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>MY REQUESTS</span>
+        <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+          {requests.length} total
+        </span>
       </div>
+
       {requests.length === 0 ? (
         <div className={styles.emptyRow}>No requests found.</div>
       ) : (
         <table className={styles.miniTable}>
           <thead>
             <tr>
-              {["ID", "SUBMISSION DATE", "STATUS"].map((h) => (
+              {["ID", "TYPE", "DATE", "STATUS", ""].map((h) => (
                 <th key={h} className={styles.th}>
                   {h}
                 </th>
@@ -472,14 +652,56 @@ function GatePassesManager({ requests = [] }) {
             {requests.map((req) => (
               <tr key={req.id} className={styles.tr}>
                 <td className={`${styles.td} ${styles.tdMono}`}>{req.id}</td>
+                <td className={`${styles.td} ${styles.tdBold}`}>
+                  {req.type || "—"}
+                </td>
                 <td className={styles.td}>{req.submission_date}</td>
                 <td className={styles.td}>
                   <StatusBadge status={req.status.toUpperCase()} />
+                </td>
+                <td className={styles.td}>
+                  <button
+                    onClick={() => setSelected(req)}
+                    title="View details"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--text-muted)",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                      <ellipse
+                        cx="7.5"
+                        cy="7.5"
+                        rx="6.5"
+                        ry="4"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                      />
+                      <circle
+                        cx="7.5"
+                        cy="7.5"
+                        r="2"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                      />
+                    </svg>
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+
+      {selected && (
+        <RequestDetailModal
+          request={selected}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );
@@ -510,7 +732,8 @@ export default function DashboardPage() {
         if (!res.ok) return;
         const data = await res.json();
         if (data.Requests) setMyRequests(data.Requests);
-        console.log(data);
+        if (data.requests) setMyRequests(data.requests)
+        console.log('Dashboard raw response:', data)
       } catch (err) {
         console.error("Dashboard Fetch Error:", err);
         addToast("Could not sync with server. Showing local data.", "warning");
