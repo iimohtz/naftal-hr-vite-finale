@@ -735,14 +735,17 @@ export function AppProvider({ children }) {
     gatePasses,
     addGatePass,
     updateGatePassStatus,
+    setGatePasses,
     requests,
     addRequest,
     updateRequestStatus,
+    setRequests,
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
     toasts,
     addToast,
+    
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

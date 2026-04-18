@@ -315,136 +315,119 @@ function DemandsChart({ onSliceClick }) {
 
 /* ── Requests Panel ────────────────────────────────────────── */
 function RequestsPanel({ selectedType, onClearFilter }) {
-  const { requests, updateRequestStatus, employees } = useApp();
-  const [showHistory, setShowHistory] = useState(false);
+  const { requests, updateRequestStatus, employees } = useApp()
+  const [showHistory, setShowHistory] = useState(false)
+  const [selectedReq, setSelectedReq] = useState(null)
 
-  const getAttendanceRate = (empName) => {
-    const emp = employees.find((e) => e.name === empName);
-    if (!emp) return "—";
-    return `${Math.round((emp.present / emp.total) * 100)}%`;
-  };
-
-  let pendingList = requests.filter((r) => r.status === "PENDING");
-  let historyList = requests.filter((r) => r.status !== "PENDING");
-
-  if (selectedType) {
-    pendingList = pendingList.filter((r) => r.type === selectedType);
-    historyList = historyList.filter((r) => r.type === selectedType);
+  const getEmployeeName = (req) => {
+    if (req.person_id) {
+      const emp = employees.find(e => String(e.id) === String(req.person_id))
+      if (emp) return emp.name
+      return `ID: ${req.person_id}`
+    }
+    return req.employee || '—'
   }
 
+  const getAttendanceRate = (req) => {
+    if (!req.person_id) return '—'
+    const emp = employees.find(e => String(e.id) === String(req.person_id))
+    if (!emp || !emp.total) return '—'
+    return `${Math.round((emp.present / emp.total) * 100)}%`
+  }
+
+  const isPending = (r) => ['pending', 'PENDING'].includes(r.status)
+
+  let pendingList = requests.filter(isPending)
+  let historyList = requests.filter(r => !isPending(r))
+
+  if (selectedType) {
+    pendingList = pendingList.filter(r => r.type === selectedType)
+    historyList = historyList.filter(r => r.type === selectedType)
+  }
+
+  const EyeIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <ellipse cx="7.5" cy="7.5" rx="6.5" ry="4" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.4"/>
+    </svg>
+  )
+
   const renderTable = (list, isHistory) => (
-    <div
-      style={{
-        overflowX: "auto",
-        borderTop: isHistory ? "1px solid var(--border)" : "none",
-      }}
-    >
+    <div style={{ overflowX: 'auto', borderTop: isHistory ? '1px solid var(--border)' : 'none' }}>
       {isHistory && (
-        <div
-          style={{
-            padding: "12px 20px",
-            background: "var(--bg-subtle)",
-            borderBottom: "1px solid var(--border)",
-            fontSize: "11px",
-            fontWeight: "bold",
-            color: "var(--text-muted)",
-          }}
-        >
-          HISTORY LOG (EVALUATED REQUESTS)
+        <div style={{ padding: '12px 20px', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+          HISTORY LOG
         </div>
       )}
       <table className={styles.miniTable}>
         <thead>
           <tr>
-            {["ID", "EMPLOYEE", "ATT. %", "TYPE", "DAYS", "ACTIONS"].map(
-              (h) => (
-                <th key={h} className={styles.th}>
-                  {h}
-                </th>
-              ),
-            )}
+            {['ID', 'EMPLOYEE', 'ATT. %', 'TYPE', 'DATE', 'ACTIONS'].map(h => (
+              <th key={h} className={styles.th}>{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {list.length === 0 ? (
-            <tr>
-              <td colSpan={6} className={styles.emptyRow}>
-                No {isHistory ? "past" : "pending"} requests found
-              </td>
-            </tr>
-          ) : (
-            list.map((req) => (
+          {list.length === 0
+            ? <tr><td colSpan={6} className={styles.emptyRow}>No {isHistory ? 'past' : 'pending'} requests</td></tr>
+            : list.map(req => (
               <tr key={req.id} className={styles.tr}>
                 <td className={`${styles.td} ${styles.tdMono}`}>{req.id}</td>
-                <td className={`${styles.td} ${styles.tdBold}`}>
-                  {req.employee}
-                </td>
-                <td
-                  className={`${styles.td} ${styles.tdBold}`}
-                  style={{ color: "var(--brand-blue)" }}
-                >
-                  {getAttendanceRate(req.employee)}
+                <td className={`${styles.td} ${styles.tdBold}`}>{getEmployeeName(req)}</td>
+                <td className={`${styles.td} ${styles.tdBold}`} style={{ color: 'var(--brand-blue)' }}>
+                  {getAttendanceRate(req)}
                 </td>
                 <td className={styles.td}>{req.type}</td>
-                <td className={`${styles.td} ${styles.tdBold}`}>{req.days}</td>
+                <td className={styles.td}>{req.submission_date || req.date || '—'}</td>
                 <td className={styles.td}>
-                  {req.status === "PENDING" ? (
-                    <div className={styles.actionBtns}>
-                      <button
-                        className={styles.approveBtn}
-                        onClick={() => updateRequestStatus(req.id, "APPROVED")}
-                      >
-                        APPROVE
-                      </button>
-                      <button
-                        className={styles.reviewBtn}
-                        onClick={() => updateRequestStatus(req.id, "REJECTED")}
-                      >
-                        REJECT
-                      </button>
-                    </div>
-                  ) : (
-                    <StatusBadge status={req.status} />
-                  )}
+                  <div className={styles.actionBtns}>
+                    <button
+                      onClick={() => setSelectedReq(req)}
+                      title="View details"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px 4px' }}
+                    >
+                      <EyeIcon />
+                    </button>
+                    {isPending(req) ? (
+                      <>
+                        <button className={styles.approveBtn} onClick={() => updateRequestStatus(req.id, 'APPROVED')}>APPROVE</button>
+                        <button className={styles.reviewBtn}  onClick={() => updateRequestStatus(req.id, 'REJECTED')}>REJECT</button>
+                      </>
+                    ) : (
+                      <StatusBadge status={req.status.toUpperCase()} />
+                    )}
+                  </div>
                 </td>
               </tr>
             ))
-          )}
+          }
         </tbody>
       </table>
     </div>
-  );
+  )
 
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>
-          {selectedType
-            ? `${selectedType.toUpperCase()} REQUESTS`
-            : "PENDING REQUESTS"}
+          {selectedType ? `${selectedType.toUpperCase()} REQUESTS` : 'PENDING REQUESTS'}
         </span>
-        <div style={{ display: "flex", gap: "8px" }}>
-          {selectedType && (
-            <button className={styles.linkBtn} onClick={onClearFilter}>
-              CLEAR FILTER
-            </button>
-          )}
-          <button
-            className={styles.linkBtn}
-            onClick={() => setShowHistory(!showHistory)}
-          >
-            {showHistory ? "HIDE HISTORY" : "VIEW HISTORY"} <span>›</span>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {selectedType && <button className={styles.linkBtn} onClick={onClearFilter}>CLEAR FILTER</button>}
+          <button className={styles.linkBtn} onClick={() => setShowHistory(!showHistory)}>
+            {showHistory ? 'HIDE HISTORY' : 'VIEW HISTORY'} <span>›</span>
           </button>
         </div>
       </div>
 
-      {/* Pending Table */}
       {renderTable(selectedType ? pendingList : pendingList.slice(0, 3), false)}
-
-      {/* History Table rendered conditionally underneath but natively independent */}
       {showHistory && renderTable(historyList, true)}
+
+      {selectedReq && (
+        <RequestDetailModal request={selectedReq} onClose={() => setSelectedReq(null)} />
+      )}
     </div>
-  );
+  )
 }
 function RequestDetailModal({ request, onClose }) {
   const detail = request.detail || {}
@@ -624,39 +607,46 @@ function GatePassesManager({ requests = [] }) {
 
 /* ── Main ──────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const { currentUser, setRequests, setGatePasses, addToast } = useApp();
-  const isAdmin = currentUser?.type === "admin";
-  const [profileEmp, setProfileEmp] = useState(null);
-  const [selectedDemandType, setSelectedDemandType] = useState(null);
-  const [myRequests, setMyRequests] = useState([]);
+  const { currentUser, setRequests, addToast } = useApp()
+  const isAdmin     = currentUser?.type === 'admin'
+  const canApprove  = ['direction', 'department'].includes(currentUser?.unit_type)
+  const canRequest  = !canApprove
+
+  const [profileEmp,         setProfileEmp]         = useState(null)
+  const [selectedDemandType, setSelectedDemandType]  = useState(null)
+  const [myRequests,         setMyRequests]          = useState([])
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const token = localStorage.getItem('token')
+    if (!token) return
 
     const fetchDashboardData = async () => {
-      const token = localStorage.getItem("token");
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
-
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.Requests) setMyRequests(data.Requests);
-        if (data.requests) setMyRequests(data.requests)
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        })
+        if (!res.ok) return
+        const data = await res.json()
         console.log('Dashboard raw response:', data)
-      } catch (err) {
-        console.error("Dashboard Fetch Error:", err);
-        addToast("Could not sync with server. Showing local data.", "warning");
-      }
-    };
 
-    fetchDashboardData();
-  }, []);
+        const list = data.requests || data.Requests || []
+
+        if (canApprove) {
+          // Directors/department heads → feed into the global requests context
+          // so RequestsPanel can show them with approve/reject
+          setRequests(list)
+        } else {
+          // Regular employees → show in MY REQUESTS panel
+          setMyRequests(list)
+        }
+      } catch (err) {
+        console.error('Dashboard Fetch Error:', err)
+        addToast('Could not sync with server. Showing local data.', 'warning')
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
 
   return (
     <div className={styles.page}>
@@ -669,19 +659,20 @@ export default function DashboardPage() {
         </div>
         <div className={styles.col}>
           {isAdmin && <GatePassesPanel />}
-          {isAdmin && (
+
+          {/* Admins + directors/dept heads → see pending requests to approve */}
+          {(isAdmin || canApprove) && (
             <RequestsPanel
               selectedType={selectedDemandType}
               onClearFilter={() => setSelectedDemandType(null)}
             />
           )}
-          {!["direction", "department"].includes(currentUser?.unit_type) && (
-            <GatePassesManager requests={myRequests} />
-          )}
+
+          {/* Regular employees → see their own submitted requests */}
+          {canRequest && <GatePassesManager requests={myRequests} />}
         </div>
       </div>
 
-      {/* Floating profile drawer */}
       {profileEmp && (
         <EmployeeProfileDrawer
           employee={profileEmp}
@@ -690,5 +681,5 @@ export default function DashboardPage() {
         />
       )}
     </div>
-  );
+  )
 }
