@@ -315,83 +315,142 @@ function DemandsChart({ onSliceClick }) {
 
 /* ── Requests Panel ────────────────────────────────────────── */
 function RequestsPanel({ selectedType, onClearFilter }) {
-  const { requests, updateRequestStatus, employees } = useApp()
-  const [showHistory, setShowHistory] = useState(false)
-  const [selectedReq, setSelectedReq] = useState(null)
+  const { requests, updateRequestStatus, employees } = useApp();
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedReq, setSelectedReq] = useState(null);
 
   const getEmployeeName = (req) => {
     if (req.person_id) {
-      const emp = employees.find(e => String(e.id) === String(req.person_id))
-      if (emp) return emp.name
-      return `ID: ${req.person_id}`
+      const emp = employees.find((e) => String(e.id) === String(req.person_id));
+      if (emp) return emp.name;
+      return `ID: ${req.person_id}`;
     }
-    return req.employee || '—'
-  }
+    return req.employee || "—";
+  };
 
   const getAttendanceRate = (req) => {
-    if (!req.person_id) return '—'
-    const emp = employees.find(e => String(e.id) === String(req.person_id))
-    if (!emp || !emp.total) return '—'
-    return `${Math.round((emp.present / emp.total) * 100)}%`
-  }
+    if (!req.person_id) return "—";
+    const emp = employees.find((e) => String(e.id) === String(req.person_id));
+    if (!emp || !emp.total) return "—";
+    return `${Math.round((emp.present / emp.total) * 100)}%`;
+  };
 
-  const isPending = (r) => ['pending', 'PENDING'].includes(r.status)
+  const isPending = (r) => ["pending", "PENDING"].includes(r.status);
 
-  let pendingList = requests.filter(isPending)
-  let historyList = requests.filter(r => !isPending(r))
+  let pendingList = requests.filter(isPending);
+  let historyList = requests.filter((r) => !isPending(r));
 
   if (selectedType) {
-    pendingList = pendingList.filter(r => r.type === selectedType)
-    historyList = historyList.filter(r => r.type === selectedType)
+    pendingList = pendingList.filter((r) => r.type === selectedType);
+    historyList = historyList.filter((r) => r.type === selectedType);
   }
 
   const EyeIcon = () => (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <ellipse cx="7.5" cy="7.5" rx="6.5" ry="4" stroke="currentColor" strokeWidth="1.4"/>
-      <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.4"/>
+      <ellipse
+        cx="7.5"
+        cy="7.5"
+        rx="6.5"
+        ry="4"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.4" />
     </svg>
-  )
+  );
 
   const renderTable = (list, isHistory) => (
-    <div style={{ overflowX: 'auto', borderTop: isHistory ? '1px solid var(--border)' : 'none' }}>
+    <div
+      style={{
+        overflowX: "auto",
+        borderTop: isHistory ? "1px solid var(--border)" : "none",
+      }}
+    >
       {isHistory && (
-        <div style={{ padding: '12px 20px', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+        <div
+          style={{
+            padding: "12px 20px",
+            background: "var(--bg-subtle)",
+            borderBottom: "1px solid var(--border)",
+            fontSize: "11px",
+            fontWeight: "bold",
+            color: "var(--text-muted)",
+          }}
+        >
           HISTORY LOG
         </div>
       )}
       <table className={styles.miniTable}>
         <thead>
           <tr>
-            {['ID', 'EMPLOYEE', 'ATT. %', 'TYPE', 'DATE', 'ACTIONS'].map(h => (
-              <th key={h} className={styles.th}>{h}</th>
-            ))}
+            {["ID", "EMPLOYEE", "ATT. %", "TYPE", "DATE", "ACTIONS"].map(
+              (h) => (
+                <th key={h} className={styles.th}>
+                  {h}
+                </th>
+              ),
+            )}
           </tr>
         </thead>
         <tbody>
-          {list.length === 0
-            ? <tr><td colSpan={6} className={styles.emptyRow}>No {isHistory ? 'past' : 'pending'} requests</td></tr>
-            : list.map(req => (
+          {list.length === 0 ? (
+            <tr>
+              <td colSpan={6} className={styles.emptyRow}>
+                No {isHistory ? "past" : "pending"} requests
+              </td>
+            </tr>
+          ) : (
+            list.map((req) => (
               <tr key={req.id} className={styles.tr}>
                 <td className={`${styles.td} ${styles.tdMono}`}>{req.id}</td>
-                <td className={`${styles.td} ${styles.tdBold}`}>{getEmployeeName(req)}</td>
-                <td className={`${styles.td} ${styles.tdBold}`} style={{ color: 'var(--brand-blue)' }}>
+                <td className={`${styles.td} ${styles.tdBold}`}>
+                  {getEmployeeName(req)}
+                </td>
+                <td
+                  className={`${styles.td} ${styles.tdBold}`}
+                  style={{ color: "var(--brand-blue)" }}
+                >
                   {getAttendanceRate(req)}
                 </td>
                 <td className={styles.td}>{req.type}</td>
-                <td className={styles.td}>{req.submission_date || req.date || '—'}</td>
+                <td className={styles.td}>
+                  {req.submission_date || req.date || "—"}
+                </td>
                 <td className={styles.td}>
                   <div className={styles.actionBtns}>
                     <button
                       onClick={() => setSelectedReq(req)}
                       title="View details"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px 4px' }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--text-muted)",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "2px 4px",
+                      }}
                     >
                       <EyeIcon />
                     </button>
                     {isPending(req) ? (
                       <>
-                        <button className={styles.approveBtn} onClick={() => updateRequestStatus(req.id, 'APPROVED')}>APPROVE</button>
-                        <button className={styles.reviewBtn}  onClick={() => updateRequestStatus(req.id, 'REJECTED')}>REJECT</button>
+                        <button
+                          className={styles.approveBtn}
+                          onClick={() =>
+                            updateRequestStatus(req.id, "APPROVED")
+                          }
+                        >
+                          APPROVE
+                        </button>
+                        <button
+                          className={styles.reviewBtn}
+                          onClick={() =>
+                            updateRequestStatus(req.id, "REJECTED")
+                          }
+                        >
+                          REJECT
+                        </button>
                       </>
                     ) : (
                       <StatusBadge status={req.status.toUpperCase()} />
@@ -400,22 +459,31 @@ function RequestsPanel({ selectedType, onClearFilter }) {
                 </td>
               </tr>
             ))
-          }
+          )}
         </tbody>
       </table>
     </div>
-  )
+  );
 
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>
-          {selectedType ? `${selectedType.toUpperCase()} REQUESTS` : 'PENDING REQUESTS'}
+          {selectedType
+            ? `${selectedType.toUpperCase()} REQUESTS`
+            : "PENDING REQUESTS"}
         </span>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {selectedType && <button className={styles.linkBtn} onClick={onClearFilter}>CLEAR FILTER</button>}
-          <button className={styles.linkBtn} onClick={() => setShowHistory(!showHistory)}>
-            {showHistory ? 'HIDE HISTORY' : 'VIEW HISTORY'} <span>›</span>
+        <div style={{ display: "flex", gap: "8px" }}>
+          {selectedType && (
+            <button className={styles.linkBtn} onClick={onClearFilter}>
+              CLEAR FILTER
+            </button>
+          )}
+          <button
+            className={styles.linkBtn}
+            onClick={() => setShowHistory(!showHistory)}
+          >
+            {showHistory ? "HIDE HISTORY" : "VIEW HISTORY"} <span>›</span>
           </button>
         </div>
       </div>
@@ -424,101 +492,230 @@ function RequestsPanel({ selectedType, onClearFilter }) {
       {showHistory && renderTable(historyList, true)}
 
       {selectedReq && (
-        <RequestDetailModal request={selectedReq} onClose={() => setSelectedReq(null)} />
+        <RequestDetailModal
+          request={selectedReq}
+          onClose={() => setSelectedReq(null)}
+        />
       )}
     </div>
-  )
+  );
 }
 function RequestDetailModal({ request, onClose }) {
-  const detail = request.detail || {}
+  const detail = request.detail || {};
 
-  const passType    = detail.vacation_type       || detail.pass_type        || request.type        || '—'
-  const dateFrom    = detail.start_date          || detail.date             || request.from         || request.date_from || '—'
-  const dateTo      = detail.end_date            || request.to              || request.date_to      || '—'
-  const exitTime    = detail.exit_time           || request.timeFrom        || request.time_from    || '—'
-  const returnTime  = detail.expected_return_time || request.timeTo         || request.time_to      || '—'
-  const destination = detail.destination         || request.destination     || '—'
-  const reason      = detail.reason              || request.note            || request.justification || '—'
-  const reasonType  = request.reasonType         || request.reason_type     || null
-  const submittedOn = request.submission_date    || request.date            || '—'
+  const passType =
+    detail.vacation_type || detail.pass_type || request.type || "—";
+  const dateFrom =
+    detail.start_date ||
+    detail.date ||
+    request.from ||
+    request.date_from ||
+    "—";
+  const dateTo = detail.end_date || request.to || request.date_to || "—";
+  const exitTime =
+    detail.exit_time || request.timeFrom || request.time_from || "—";
+  const returnTime =
+    detail.expected_return_time || request.timeTo || request.time_to || "—";
+  const destination = detail.destination || request.destination || "—";
+  const reason = detail.reason || request.note || request.justification || "—";
+  const reasonType = request.reasonType || request.reason_type || null;
+  const submittedOn = request.submission_date || request.date || "—";
 
   return (
-    <Modal isOpen onClose={onClose} title={`REQUEST — #${request.id}`} subtitle={request.type}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`REQUEST — #${request.id}`}
+      subtitle={request.type}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+        >
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>STATUS</div>
-            <StatusBadge status={(request.status || 'PENDING').toUpperCase()} />
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              STATUS
+            </div>
+            <StatusBadge status={(request.status || "PENDING").toUpperCase()} />
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>TYPE</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{request.type || '—'}</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              TYPE
+            </div>
+            <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+              {request.type || "—"}
+            </div>
           </div>
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>SUBMITTED ON</div>
-            <div style={{ fontSize: '0.85rem' }}>{submittedOn}</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              SUBMITTED ON
+            </div>
+            <div style={{ fontSize: "0.85rem" }}>{submittedOn}</div>
           </div>
-          {passType && passType !== '—' && (
+          {passType && passType !== "—" && (
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>CATEGORY</div>
-              <div style={{ fontSize: '0.85rem', textTransform: 'capitalize' }}>{passType}</div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  marginBottom: 4,
+                }}
+              >
+                CATEGORY
+              </div>
+              <div style={{ fontSize: "0.85rem", textTransform: "capitalize" }}>
+                {passType}
+              </div>
             </div>
           )}
-          {dateFrom && dateFrom !== '—' && (
+          {dateFrom && dateFrom !== "—" && (
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>FROM</div>
-              <div style={{ fontSize: '0.85rem' }}>{dateFrom}</div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  marginBottom: 4,
+                }}
+              >
+                FROM
+              </div>
+              <div style={{ fontSize: "0.85rem" }}>{dateFrom}</div>
             </div>
           )}
-          {dateTo && dateTo !== '—' && (
+          {dateTo && dateTo !== "—" && (
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>TO</div>
-              <div style={{ fontSize: '0.85rem' }}>{dateTo}</div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  marginBottom: 4,
+                }}
+              >
+                TO
+              </div>
+              <div style={{ fontSize: "0.85rem" }}>{dateTo}</div>
             </div>
           )}
-          {exitTime && exitTime !== '—' && (
+          {exitTime && exitTime !== "—" && (
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>EXIT TIME</div>
-              <div style={{ fontSize: '0.85rem' }}>{exitTime}</div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  marginBottom: 4,
+                }}
+              >
+                EXIT TIME
+              </div>
+              <div style={{ fontSize: "0.85rem" }}>{exitTime}</div>
             </div>
           )}
-          {returnTime && returnTime !== '—' && (
+          {returnTime && returnTime !== "—" && (
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>RETURN TIME</div>
-              <div style={{ fontSize: '0.85rem' }}>{returnTime}</div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  marginBottom: 4,
+                }}
+              >
+                RETURN TIME
+              </div>
+              <div style={{ fontSize: "0.85rem" }}>{returnTime}</div>
             </div>
           )}
           {reasonType && (
             <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>REASON CATEGORY</div>
-              <div style={{ fontSize: '0.85rem', textTransform: 'capitalize' }}>{reasonType}</div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  marginBottom: 4,
+                }}
+              >
+                REASON CATEGORY
+              </div>
+              <div style={{ fontSize: "0.85rem", textTransform: "capitalize" }}>
+                {reasonType}
+              </div>
             </div>
           )}
         </div>
 
-        {destination && destination !== '—' && (
+        {destination && destination !== "—" && (
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>DESTINATION</div>
-            <div style={{ fontSize: '0.85rem', whiteSpace: 'pre-line' }}>{destination}</div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              DESTINATION
+            </div>
+            <div style={{ fontSize: "0.85rem", whiteSpace: "pre-line" }}>
+              {destination}
+            </div>
           </div>
         )}
 
-        {reason && reason !== '—' && (
+        {reason && reason !== "—" && (
           <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 4 }}>NOTE / REASON</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.5 }}>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                marginBottom: 4,
+              }}
+            >
+              NOTE / REASON
+            </div>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+                fontStyle: "italic",
+                lineHeight: 1.5,
+              }}
+            >
               {reason}
             </div>
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-          <Button variant="secondary" onClick={onClose}>CLOSE</Button>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            paddingTop: 8,
+            borderTop: "1px solid var(--border)",
+          }}
+        >
+          <Button variant="secondary" onClick={onClose}>
+            CLOSE
+          </Button>
         </div>
       </div>
     </Modal>
-  )
+  );
 }
 /* ── Manager Gate Passes ───────────────────────────────────── */
 function GatePassesManager({ requests = [] }) {
@@ -607,46 +804,51 @@ function GatePassesManager({ requests = [] }) {
 
 /* ── Main ──────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const { currentUser, setRequests, addToast } = useApp()
-  const isAdmin     = currentUser?.type === 'admin'
-  const canApprove  = ['direction', 'department'].includes(currentUser?.unit_type)
-  const canRequest  = !canApprove
+  const { currentUser, setRequests, addToast } = useApp();
+  const isAdmin = currentUser?.type === "admin";
+  const canApprove = ["direction", "department"].includes(
+    currentUser?.unit_type,
+  );
+  const canRequest = !canApprove;
 
-  const [profileEmp,         setProfileEmp]         = useState(null)
-  const [selectedDemandType, setSelectedDemandType]  = useState(null)
-  const [myRequests,         setMyRequests]          = useState([])
+  const [profileEmp, setProfileEmp] = useState(null);
+  const [selectedDemandType, setSelectedDemandType] = useState(null);
+  const [myRequests, setMyRequests] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) return
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
     const fetchDashboardData = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        })
-        if (!res.ok) return
-        const data = await res.json()
-        console.log('Dashboard raw response:', data)
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        console.log("Dashboard raw response:", data);
 
-        const list = data.requests || data.Requests || []
+        const list = data.requests || data.Requests || [];
 
         if (canApprove) {
           // Directors/department heads → feed into the global requests context
           // so RequestsPanel can show them with approve/reject
-          setRequests(list)
+          setRequests(list);
         } else {
           // Regular employees → show in MY REQUESTS panel
-          setMyRequests(list)
+          setMyRequests(list);
         }
       } catch (err) {
-        console.error('Dashboard Fetch Error:', err)
-        addToast('Could not sync with server. Showing local data.', 'warning')
+        console.error("Dashboard Fetch Error:", err);
+        addToast("Could not sync with server. Showing local data.", "warning");
       }
-    }
+    };
 
-    fetchDashboardData()
-  }, [])
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -654,14 +856,13 @@ export default function DashboardPage() {
       <div className={styles.grid}>
         <div className={styles.col}>
           {isAdmin && <MyEmployees onViewEmployee={setProfileEmp} />}
-          {isAdmin && <DemandsChart onSliceClick={setSelectedDemandType} />}
+          {canApprove && <DemandsChart onSliceClick={setSelectedDemandType} />}
           <DocHubQuick />
         </div>
         <div className={styles.col}>
-          {isAdmin && <GatePassesPanel />}
-
-          {/* Admins + directors/dept heads → see pending requests to approve */}
-          {(isAdmin || canApprove) && (
+          {/* Only direction/department see gate passes and pending requests */}
+          {canApprove && <GatePassesPanel />}
+          {canApprove && (
             <RequestsPanel
               selectedType={selectedDemandType}
               onClearFilter={() => setSelectedDemandType(null)}
@@ -681,5 +882,5 @@ export default function DashboardPage() {
         />
       )}
     </div>
-  )
+  );
 }

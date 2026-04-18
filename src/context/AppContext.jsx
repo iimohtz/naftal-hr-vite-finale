@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 
 /* ─────────────────────────────────────────────────────────────
    ADMIN ACCESS LIST
@@ -47,8 +53,8 @@ export function normalizeUser(person, unit) {
     position: person.position || "", // e.g. "Directeur Informatique"
     unit_name: unit?.unit_name || "", // e.g. "Direction Informatique"
     unit_id: person.unit_id || null,
-    unit_type:   unit?.unit_type  || '',
-    unit:        unit || null,
+    unit_type: unit?.unit_type || "",
+    unit: unit || null,
     director_id: unit?.director_id || null,
 
     // Auth / role
@@ -490,21 +496,24 @@ const SEED_NOTIFICATIONS = [
 const AppContext = createContext(null);
 
 function mapList(list) {
-  return list.map(p => ({
+  return list.map((p) => ({
     id: String(p.id),
-    name: `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim(),
-    dept: p.unit_name || 'N/A',
-    role: p.position || 'N/A',
-    email: p.email || '',
-    phone: p.phone_ip || '',
-    status: p.is_active ? 'ACTIVE' : 'INACTIVE',
-    joinDate: p.contract_start_date?.slice(0, 10) || '',
-    location: p.unit_name || '—',
-    shift: '—',
-    overtime: 0, present: 0, total: 22, efficiency: 0,
-    unit_type: p.unit_type || '',
+    name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
+    dept: p.unit_name || "N/A",
+    role: p.position || "N/A",
+    email: p.email || "",
+    phone: p.phone_ip || "",
+    status: p.is_active ? "ACTIVE" : "INACTIVE",
+    joinDate: p.contract_start_date?.slice(0, 10) || "",
+    location: p.unit_name || "—",
+    shift: "—",
+    overtime: 0,
+    present: 0,
+    total: 22,
+    efficiency: 0,
+    unit_type: p.unit_type || "",
     director_id: p.director_id || null,
-  }))
+  }));
 }
 
 export function AppProvider({ children }) {
@@ -557,28 +566,30 @@ export function AppProvider({ children }) {
       return SEED_EMPLOYEES;
     }
   });
-  const [gatePasses, setGatePasses] = useState(SEED_GATE_PASSES);
-  const [requests, setRequests] = useState(SEED_REQUESTS);
+  const [requests, setRequests] = useState([]);
+  const [gatePasses, setGatePasses] = useState([]);
   const [notifications, setNotifications] = useState(SEED_NOTIFICATIONS);
   const [toasts, setToasts] = useState([]);
 
   /* ── Auth ── */
   const login = useCallback((personOrId, password) => {
     // Real API path
-    if (typeof personOrId === 'object' && personOrId !== null) {
-      const unit = JSON.parse(localStorage.getItem('unit') || 'null')
-      const normalized = normalizeUser(personOrId, unit)
-      setCurrentUser(normalized)
-      localStorage.setItem('user', JSON.stringify(personOrId))
+    if (typeof personOrId === "object" && personOrId !== null) {
+      const unit = JSON.parse(localStorage.getItem("unit") || "null");
+      const normalized = normalizeUser(personOrId, unit);
+      setCurrentUser(normalized);
+      localStorage.setItem("user", JSON.stringify(personOrId));
 
       // ── Refresh employees from the new user's list ──
       try {
-        const list = JSON.parse(localStorage.getItem('list') || 'null')
-        if (list && list.length > 0) setEmployees(mapList(list))
-        else setEmployees(SEED_EMPLOYEES)
-      } catch { setEmployees(SEED_EMPLOYEES) }
+        const list = JSON.parse(localStorage.getItem("list") || "null");
+        if (list && list.length > 0) setEmployees(mapList(list));
+        else setEmployees(SEED_EMPLOYEES);
+      } catch {
+        setEmployees(SEED_EMPLOYEES);
+      }
 
-      return true
+      return true;
     }
 
     // ── Demo path: called with (id string, password string)
@@ -632,10 +643,13 @@ export function AppProvider({ children }) {
 
   const logout = useCallback(() => {
     setCurrentUser(null);
+    setEmployees([]);
+    setRequests([]);
+    setGatePasses([]);
     localStorage.removeItem("user");
     localStorage.removeItem("unit");
     localStorage.removeItem("token");
-    localStorage.removeItem('list');
+    localStorage.removeItem("list");
   }, []);
 
   /* ── Toast ── */
@@ -745,7 +759,6 @@ export function AppProvider({ children }) {
     markAllNotificationsRead,
     toasts,
     addToast,
-    
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
