@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { signApproval } from "../../crypto/sign";
 import {
   PieChart,
   Pie,
@@ -315,7 +316,8 @@ function DemandsChart({ onSliceClick }) {
 
 /* ── Requests Panel ────────────────────────────────────────── */
 function RequestsPanel({ selectedType, onClearFilter }) {
-  const { requests, updateRequestStatus, employees } = useApp();
+  const { requests, updateRequestStatus, employees, currentUser, addToast } =
+    useApp();
   const [showHistory, setShowHistory] = useState(false);
   const [selectedReq, setSelectedReq] = useState(null);
 
@@ -333,6 +335,45 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     const emp = employees.find((e) => String(e.id) === String(req.person_id));
     if (!emp || !emp.total) return "—";
     return `${Math.round((emp.present / emp.total) * 100)}%`;
+  };
+
+  const handleApprove = async (req) => {
+    try {
+      const { signature, signed_data } = await signApproval(
+        req.id,
+        currentUser.id,
+      );
+      console.log("SIGNATURE PAYLOAD:", { signature, signed_data });
+
+      const token = localStorage.getItem("token");
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ 
+        signature, 
+        signed_data 
+      }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "The server rejected the signature.");
+    }
+
+      updateRequestStatus(req.id, "APPROVED");
+      addToast(`Request #${req.id} approved and signed.`);
+    } catch (err) {
+      addToast(`Approval failed: ${err.message}`, "error");
+      console.log(`Approval failed: ${err.message}`, "error")
+    }
+  };
+
+  const handleReject = (req) => {
+    updateRequestStatus(req.id, "REJECTED");
+    addToast(`Request #${req.id} rejected.`, "warning");
   };
 
   const isPending = (r) => ["pending", "PENDING"].includes(r.status);
@@ -437,17 +478,13 @@ function RequestsPanel({ selectedType, onClearFilter }) {
                       <>
                         <button
                           className={styles.approveBtn}
-                          onClick={() =>
-                            updateRequestStatus(req.id, "APPROVED")
-                          }
+                          onClick={() => handleApprove(req)}
                         >
                           APPROVE
                         </button>
                         <button
                           className={styles.reviewBtn}
-                          onClick={() =>
-                            updateRequestStatus(req.id, "REJECTED")
-                          }
+                          onClick={() => handleReject(req)}
                         >
                           REJECT
                         </button>
