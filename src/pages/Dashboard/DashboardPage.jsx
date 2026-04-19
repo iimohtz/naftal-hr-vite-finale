@@ -488,7 +488,7 @@ function RequestsPanel({ selectedType, onClearFilter }) {
         </div>
       </div>
 
-      {renderTable(selectedType ? pendingList : pendingList.slice(0, 3), false)}
+      {renderTable(pendingList, false)}
       {showHistory && renderTable(historyList, true)}
 
       {selectedReq && (
