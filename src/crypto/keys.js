@@ -1,32 +1,130 @@
-export const PRIVATE_KEYS = {
-  1:  '5d9c9c5c5b3c3e2a1f6e8d7a9b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c',
-  2:  '7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8',
-  3:  'f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9',
-  4:  'a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8',
-  5:  'b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7',
-  6:  'c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6',
-  7:  'e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5',
-  8:  'f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4',
-  9:  'a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3',
-  10: 'b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2',
-  11: 'c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1',
-  12: 'd0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0',
-  13: 'e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9',
-  14: 'f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8',
-  15: 'a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7',
-  16: 'b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6',
-  17: 'c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5',
-  18: 'd4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4',
-  19: 'e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3',
-  20: 'f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2',
-  21: 'a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1',
-  22: 'b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0',
-  23: 'c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9',
-  24: 'd8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8',
-  25: 'e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7',
-  26: 'f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6',
-  27: 'a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5',
-  28: 'b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4',
-  29: 'c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3',
-  30: 'd2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2'
-};
+function openKeyDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("SignatureKeys", 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains("keys")) {
+        db.createObjectStore("keys");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// ── IDBRequest Promise wrappers ──────────────────────────────────────────────
+// Native IndexedDB methods return IDBRequest objects, NOT Promises.
+// Awaiting them directly returns the IDBRequest itself (an object), which
+// caused loadPrivateKey to always hit the "corrupted object" branch and
+// delete valid keys. These helpers fix that.
+
+function idbGet(store, key) {
+  return new Promise((resolve, reject) => {
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbPut(store, value, key) {
+  return new Promise((resolve, reject) => {
+    const req = store.put(value, key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbDelete(store, key) {
+  return new Promise((resolve, reject) => {
+    const req = store.delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function generateKeyPair() {
+  return await window.crypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true, // extractable so we can export as JWK for storage
+    ["sign", "verify"]
+  );
+}
+
+export async function exportPublicKey(publicKey) {
+  return await window.crypto.subtle.exportKey("jwk", publicKey);
+}
+
+async function exportPrivateKey(privateKey) {
+  return await window.crypto.subtle.exportKey("jwk", privateKey);
+}
+
+export async function savePrivateKey(privateKey, userId) {
+  const jwk = await exportPrivateKey(privateKey);
+  const jwkString = JSON.stringify(jwk);
+  JSON.parse(jwkString); // validate it's serializable before storing
+
+  const db = await openKeyDB();
+  const tx = db.transaction("keys", "readwrite");
+  const store = tx.objectStore("keys");
+  await idbPut(store, jwkString, String(userId)); // ← was: store.put() not awaited properly
+}
+
+export async function loadPrivateKey(userId) {
+  const db = await openKeyDB();
+  const tx = db.transaction("keys", "readonly");
+  const store = tx.objectStore("keys");
+  const stored = await idbGet(store, String(userId)); // ← was: returning IDBRequest object
+
+  if (!stored) return null;
+
+  let jwk;
+  if (typeof stored === "string") {
+    try {
+      jwk = JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to parse JWK string", e);
+      const delTx = db.transaction("keys", "readwrite");
+      const delStore = delTx.objectStore("keys");
+      await idbDelete(delStore, String(userId));
+      return null;
+    }
+  } else {
+    // Unexpected format — delete and bail
+    console.warn("Unexpected stored format, deleting");
+    const delTx = db.transaction("keys", "readwrite");
+    const delStore = delTx.objectStore("keys");
+    await idbDelete(delStore, String(userId));
+    return null;
+  }
+
+  // Validate required JWK fields
+  if (!jwk.kty || jwk.kty !== "EC" || !jwk.crv || jwk.crv !== "P-256" || !jwk.d) {
+    console.warn("Invalid JWK structure, deleting");
+    const delTx = db.transaction("keys", "readwrite");
+    const delStore = delTx.objectStore("keys");
+    await idbDelete(delStore, String(userId));
+    return null;
+  }
+
+  try {
+    return await window.crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      { name: "ECDSA", namedCurve: "P-256" },
+      false,
+      ["sign"]
+    );
+  } catch (err) {
+    console.error("Failed to import private key:", err);
+    const delTx = db.transaction("keys", "readwrite");
+    const delStore = delTx.objectStore("keys");
+    await idbDelete(delStore, String(userId));
+    return null;
+  }
+}
+
+export async function hasKeyPair(userId) {
+  const key = await loadPrivateKey(userId);
+  return key !== null;
+}

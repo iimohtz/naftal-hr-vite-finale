@@ -1,7 +1,7 @@
-// Convert hex string to Uint8Array
+import { loadPrivateKey } from "./keys";
+
 function hexToBytes(hex) {
   if (typeof hex !== 'string') return new Uint8Array();
-  // Remove 0x prefix if it exists
   const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
   const bytes = new Uint8Array(cleanHex.length / 2);
   for (let i = 0; i < cleanHex.length; i += 2) {
@@ -17,40 +17,29 @@ function bytesToHex(bytes) {
 }
 
 export async function signApproval(requestId, validatorId) {
-  let privateKeyHex = localStorage.getItem('private_key');
-  if (!privateKeyHex) throw new Error('No private key found in storage');
+  // Get current user ID from localStorage (set during login)
+  const userStr = localStorage.getItem("user");
+  if (!userStr) throw new Error("No user found");
+  const user = JSON.parse(userStr);
+  const userId = user.id;
 
-  privateKeyHex = privateKeyHex.trim().replace(/^0x/, '');
-  const privateKeyBytes = hexToBytes(privateKeyHex);
+  // Load the private key from IndexedDB
+  const privateKey = await loadPrivateKey(userId);
+  if (!privateKey) throw new Error("Digital signature key not found. Please log out and log in again.");
 
-  // The string that acts as the "contract"
+  // Build the message to sign (must match verification on backend)
   const signedData = `approve:request_id:${requestId}:validator_id:${validatorId}:${new Date().toISOString().slice(0, 10)}`;
 
-  try {
-    // HMAC is much more stable in Web Crypto for raw 32-byte keys
-    const cryptoKey = await window.crypto.subtle.importKey(
-      'raw',
-      privateKeyBytes,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
+  const encoder = new TextEncoder();
+  const dataBytes = encoder.encode(signedData);
 
-    const encoder = new TextEncoder();
-    const dataBytes = encoder.encode(signedData);
+  const signatureBuffer = await window.crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    privateKey,
+    dataBytes
+  );
 
-    const signatureBuffer = await window.crypto.subtle.sign(
-      'HMAC',
-      cryptoKey,
-      dataBytes
-    );
+  const signature = bytesToHex(new Uint8Array(signatureBuffer));
 
-    return {
-      signature: bytesToHex(new Uint8Array(signatureBuffer)),
-      signed_data: signedData,
-    };
-  } catch (cryptoError) {
-    console.error("Crypto Error Details:", cryptoError);
-    throw new Error(`Signature failed: ${cryptoError.message}`);
-  }
+  return { signature, signed_data: signedData };
 }

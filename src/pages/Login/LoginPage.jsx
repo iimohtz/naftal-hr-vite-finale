@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../../context/AppContext";
+import { generateKeyPair, exportPublicKey, savePrivateKey } from "../../crypto/keys";
 import styles from "./LoginPage.module.css";
-import { PRIVATE_KEYS } from "../../crypto/keys";
 
 export default function LoginPage() {
   const { login } = useApp();
@@ -16,10 +16,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!id || !password) {
-      setError("Both fields are required.");
-      return;
-    }
+    if (!id || !password) { setError("Both fields are required."); return; }
     setLoading(true);
     setError("");
 
@@ -35,52 +32,67 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ id, password }),
       });
 
       const data = await response.json();
+      
+      // LOG THE SUCCESSFUL RESPONSE HERE
+      console.log("Login API Response:", data);
+
       if (!response.ok) throw new Error(data.message);
 
-      /*
-       * API returns:
-       *   data.token  – Sanctum token
-       *   data.person – Person model  { id, first_name, last_name, position,
-       *                                  email, phone_ip, unit_id, ... }
-       *   data.unit   – OrganizationUnit { unit_name, unit_type, director_id, ... }
-       *
-       * We store BOTH in localStorage so AppContext and ProfilePage can read
-       * them on every page load without another API call.
-       */
-      localStorage.removeItem("attendance");
+      localStorage.removeItem('attendance')
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.person));
       localStorage.setItem("unit", JSON.stringify(data.unit ?? null));
       localStorage.setItem("list", JSON.stringify(data.persons_list ?? []));
-      localStorage.setItem(
-        "attendance",
-        JSON.stringify(data.attendance_sessions ?? []),
-      );
+      localStorage.setItem("attendance", JSON.stringify(data.attendance_sessions ?? []));
 
-      // login() in AppContext reads 'unit' from localStorage, normalizes,
-      // sets currentUser with full_name, admin flag, unit_name, etc.
       login(data.person);
-      navigate("/dashboard");
-      console.log(data);
-      const personId = data.person.id;
-      const privateKeyHex = PRIVATE_KEYS[personId];
-      if (privateKeyHex) {
-        localStorage.setItem("private_key", privateKeyHex);
+
+      // ── Digital signature key setup (ECDSA) ────────────────────
+      const userId = data.person.id;
+      const hasPublicKey = data.person.public_key !== null && data.person.public_key !== undefined;
+
+      if (!hasPublicKey) {
+        try {
+          // Generate non‑exportable ECDSA key pair (P-256)
+          const { privateKey, publicKey } = await generateKeyPair();
+          const jwkPublic = await exportPublicKey(publicKey);
+
+          // Send public key to backend
+          const pubRes = await fetch(`${import.meta.env.VITE_API_URL}/keys/public`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.token}`,
+            },
+            body: JSON.stringify({ public_key: JSON.stringify(jwkPublic) }),
+          });
+          if (!pubRes.ok) throw new Error("Failed to store public key on server");
+
+          // Store private key in IndexedDB (non‑exportable)
+          await savePrivateKey(privateKey, userId);
+          localStorage.setItem("keys_setup_done", "true");
+        } catch (keyErr) {
+          console.error("Key setup failed:", keyErr);
+          // Show a non‑blocking warning; user can still use the app
+          setError("Warning: Digital signature keys could not be set up. Some approval features may not work.");
+        }
       } else {
-        console.warn("No private key found for person_id:", personId);
+        // User already has a public key – ensure local flag is set
+        localStorage.setItem("keys_setup_done", "true");
       }
+
+      navigate("/dashboard");
     } catch (err) {
+      // LOG THE ERROR HERE
+      console.error("Login API Error:", err);
+      
       setError(
-        err.message ||
-          "Invalid Employee ID or password. Please verify your credentials.",
+        err.message || "Invalid Employee ID or password. Please verify your credentials."
       );
     }
 
@@ -88,14 +100,8 @@ export default function LoginPage() {
   };
 
   const fillDemo = (type) => {
-    if (type === "admin") {
-      setId("NFT-2024-00892");
-      setPassword("admin123");
-    }
-    if (type === "manager") {
-      setId("NF-4829");
-      setPassword("shift123");
-    }
+    if (type === "admin") { setId("NFT-2024-00892"); setPassword("admin123"); }
+    if (type === "manager") { setId("NF-4829"); setPassword("shift123"); }
   };
 
   return (
@@ -112,16 +118,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className={styles.logoRow}>
           <div className={styles.logoMark}>
-            <img
-              src="/naftal-logo-png_seeklogo-287188.webp"
-              alt="Naftal Logo"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                borderRadius: "4px",
-              }}
-            />
+            <img src="/naftal-logo-png_seeklogo-287188.webp" alt="Naftal Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} />
           </div>
           <div className={styles.logoDivider} />
           <div className={styles.logoText}>
@@ -137,26 +134,9 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className={styles.form} noValidate>
           {error && (
             <div className={styles.errorBox} role="alert">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                style={{ flexShrink: 0 }}
-              >
-                <circle
-                  cx="7"
-                  cy="7"
-                  r="6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M7 4v3.5M7 9.5v.01"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M7 4v3.5M7 9.5v.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               {error}
             </div>
@@ -165,21 +145,8 @@ export default function LoginPage() {
           <div className={styles.field}>
             <label className={styles.fieldLabel}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect
-                  x="1"
-                  y="4"
-                  width="10"
-                  height="7"
-                  rx="1"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-                <path
-                  d="M4 4V3a2 2 0 114 0v1"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                />
+                <rect x="1" y="4" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M4 4V3a2 2 0 114 0v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
               EMPLOYEE ID
             </label>
@@ -198,21 +165,8 @@ export default function LoginPage() {
           <div className={styles.field}>
             <label className={styles.fieldLabel}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <rect
-                  x="1"
-                  y="4.5"
-                  width="10"
-                  height="7"
-                  rx="1"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-                <path
-                  d="M3.5 4.5V3a2.5 2.5 0 015 0v1.5"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                />
+                <rect x="1" y="4.5" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M3.5 4.5V3a2.5 2.5 0 015 0v1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                 <circle cx="6" cy="8" r="1" fill="currentColor" />
               </svg>
               SECURE PASSWORD
@@ -236,39 +190,14 @@ export default function LoginPage() {
               >
                 {showPassword ? (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                    />
-                    <circle
-                      cx="8"
-                      cy="8"
-                      r="2"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                    />
-                    <path
-                      d="M2 2l12 12"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                    />
+                    <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.3" />
+                    <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
+                    <path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                   </svg>
                 ) : (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                    />
-                    <circle
-                      cx="8"
-                      cy="8"
-                      r="2"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                    />
+                    <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" strokeWidth="1.3" />
+                    <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
                   </svg>
                 )}
               </button>
@@ -292,13 +221,7 @@ export default function LoginPage() {
               <>
                 ENTER{" "}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M3 8h10M9 4l4 4-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </>
             )}
@@ -308,19 +231,9 @@ export default function LoginPage() {
         <div className={styles.demoHint}>
           <span className={styles.demoLabel}>DEMO ACCESS</span>
           <div className={styles.demoAccounts}>
-            <button
-              className={styles.demoBtn}
-              onClick={() => fillDemo("admin")}
-            >
-              Admin Account
-            </button>
+            <button className={styles.demoBtn} onClick={() => fillDemo("admin")}>Admin Account</button>
             <span className={styles.demoDot}>·</span>
-            <button
-              className={styles.demoBtn}
-              onClick={() => fillDemo("manager")}
-            >
-              Shift Manager
-            </button>
+            <button className={styles.demoBtn} onClick={() => fillDemo("manager")}>Shift Manager</button>
           </div>
         </div>
       </div>

@@ -338,6 +338,13 @@ function RequestsPanel({ selectedType, onClearFilter }) {
   };
 
   const handleApprove = async (req) => {
+    // Check if digital signature keys are set up
+    const keysReady = localStorage.getItem("keys_setup_done") === "true";
+    if (!keysReady) {
+      addToast("Digital signature keys not set up. Please log out and log in again.", "error");
+      return;
+    }
+
     try {
       const { signature, signed_data } = await signApproval(
         req.id,
@@ -346,22 +353,22 @@ function RequestsPanel({ selectedType, onClearFilter }) {
       console.log("SIGNATURE PAYLOAD:", { signature, signed_data });
 
       const token = localStorage.getItem("token");
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({ 
-        signature, 
-        signed_data 
-      }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "The server rejected the signature.");
-    }
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          signature, 
+          signed_data 
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "The server rejected the signature.");
+      }
 
       updateRequestStatus(req.id, "APPROVED");
       addToast(`Request #${req.id} approved and signed.`);
@@ -537,6 +544,7 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     </div>
   );
 }
+
 function RequestDetailModal({ request, onClose }) {
   const detail = request.detail || {};
 
@@ -754,6 +762,7 @@ function RequestDetailModal({ request, onClose }) {
     </Modal>
   );
 }
+
 /* ── Manager Gate Passes ───────────────────────────────────── */
 function GatePassesManager({ requests = [] }) {
   const [selected, setSelected] = useState(null);
