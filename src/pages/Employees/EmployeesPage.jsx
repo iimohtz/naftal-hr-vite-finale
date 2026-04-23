@@ -215,10 +215,14 @@ export default function EmployeesPage() {
   const { employees, addToast } = useApp();
   const token = localStorage.getItem("token");
   const handlePrintSlip = async (emp) => {
-    addToast(`Generating slip for ${emp.name}…`);
+    // Always send the current month in YYYY-MM format
+    const now = new Date();
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    addToast(`Generating slip for ${emp.name} — ${yearMonth}…`);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/resume/download?id=${emp.id}`,
+        `${import.meta.env.VITE_API_URL}/resume/download?id=${emp.id}&month=${yearMonth}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -231,7 +235,7 @@ export default function EmployeesPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `slip_${emp.id}_${emp.name.replace(/\s+/g, "_")}.pdf`;
+      a.download = `slip_${emp.id}_${emp.name.replace(/\s+/g, "_")}_${yearMonth}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {

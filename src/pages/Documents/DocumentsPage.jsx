@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { useSearchParams } from "react-router-dom";
-import { signApproval } from '../../crypto/sign'
+import { signApproval } from "../../crypto/sign";
 import {
   StatusBadge,
   Button,
@@ -83,8 +83,50 @@ const TABS = [
 /* ── Payroll Tab ───────────────────────────────────────────── */
 // Receives onViewEmployee so clicking a name opens the profile drawer
 function PayrollTab({ onViewEmployee }) {
-  const { employees, addToast } = useApp();
-  const [month, setMonth] = useState("OCT 2023");
+  const { employees, addToast } = useApp()
+  const token = localStorage.getItem('token')
+
+  // Generate last 6 months dynamically
+  const MONTHS_LIST = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase()
+  })
+
+  const [month, setMonth] = useState(MONTHS_LIST[0])
+
+  // Manual parse "APR 2026" → "2026-04" (no browser date parsing issues)
+  const toYearMonth = (monthStr) => {
+    const MONTHS = {
+      JAN: '01', FEB: '02', MAR: '03', APR: '04',
+      MAY: '05', JUN: '06', JUL: '07', AUG: '08',
+      SEP: '09', OCT: '10', NOV: '11', DEC: '12'
+    }
+    const [mon, year] = monthStr.split(' ')
+    return `${year}-${MONTHS[mon] || '01'}`
+  }
+
+  const handlePrintSlip = async (emp) => {
+    const yearMonth = toYearMonth(month)
+    addToast(`Generating slip for ${emp.name} — ${yearMonth}…`)
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/resume/download?id=${emp.id}&month=${yearMonth}`,
+        { headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' } }
+      )
+      if (!response.ok) throw new Error('Failed to download')
+      const blob = await response.blob()
+      const url  = window.URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `slip_${emp.id}_${yearMonth}.pdf`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      console.log(response)
+    } catch {
+      addToast(`Failed to generate slip for ${emp.name}.`, 'error')
+    }
+  }
 
   return (
     <div className={styles.tabContent}>
@@ -92,16 +134,14 @@ function PayrollTab({ onViewEmployee }) {
         <div className={styles.tabLeft}>
           <div className={styles.liveDot} />
           <span className={styles.tabCardTitle}>PAYROLL OVERVIEW</span>
-          <Select value={month} onChange={(e) => setMonth(e.target.value)}>
-            {["OCT 2023", "SEP 2023", "AUG 2023", "JUL 2023"].map((m) => (
-              <option key={m}>{m}</option>
-            ))}
+          <Select value={month} onChange={e => setMonth(e.target.value)}>
+            {MONTHS_LIST.map(m => <option key={m}>{m}</option>)}
           </Select>
         </div>
         <Button
           variant="primary"
           size="sm"
-          onClick={() => addToast("Payroll report generated for " + month)}
+          onClick={() => addToast('Payroll report generated for ' + month)}
         >
           GENERATE REPORT
         </Button>
@@ -111,53 +151,28 @@ function PayrollTab({ onViewEmployee }) {
         <table className={styles.table}>
           <thead>
             <tr>
-              {[
-                "EMPLOYEE ID",
-                "NAME",
-                "DEPARTMENT",
-                "PRESENT",
-                "OVERTIME",
-                "EFFICIENCY",
-                "ACTION",
-              ].map((h) => (
-                <th key={h} className={styles.th}>
-                  {h}
-                </th>
+              {['EMPLOYEE ID', 'NAME', 'DEPARTMENT', 'PRESENT', 'OVERTIME', 'EFFICIENCY', 'ACTION'].map(h => (
+                <th key={h} className={styles.th}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {employees.map((emp) => (
+            {employees.map(emp => (
               <tr key={emp.id} className={styles.tr}>
                 <td className={`${styles.td} ${styles.tdId}`}>{emp.id}</td>
                 <td className={styles.td}>
-                  {/* Clicking avatar or name opens the profile drawer */}
                   <div className={styles.nameCell}>
-                    <button
-                      className={styles.empAvatarBtn}
-                      onClick={() => onViewEmployee(emp)}
-                      title="View profile"
-                    >
+                    <button className={styles.empAvatarBtn} onClick={() => onViewEmployee(emp)} title="View profile">
                       <Avatar name={emp.name} size={28} />
                     </button>
-                    <button
-                      className={styles.empNameBtn}
-                      onClick={() => onViewEmployee(emp)}
-                      title="View profile"
-                    >
+                    <button className={styles.empNameBtn} onClick={() => onViewEmployee(emp)} title="View profile">
                       {emp.name}
                     </button>
                   </div>
                 </td>
-                <td className={styles.td}>
-                  <span className={styles.deptLabel}>{emp.dept}</span>
-                </td>
-                <td className={styles.td}>
-                  {emp.present}/{emp.total}
-                </td>
-                <td className={`${styles.td} ${styles.tdOT}`}>
-                  {emp.overtime}h
-                </td>
+                <td className={styles.td}><span className={styles.deptLabel}>{emp.dept}</span></td>
+                <td className={styles.td}>{emp.present}/{emp.total}</td>
+                <td className={`${styles.td} ${styles.tdOT}`}>{emp.overtime}h</td>
                 <td className={styles.td}>
                   <div className={styles.effCell}>
                     <div className={styles.effBar}>
@@ -165,12 +180,7 @@ function PayrollTab({ onViewEmployee }) {
                         className={styles.effFill}
                         style={{
                           width: `${emp.efficiency}%`,
-                          background:
-                            emp.efficiency >= 90
-                              ? "var(--green)"
-                              : emp.efficiency >= 75
-                                ? "var(--amber)"
-                                : "var(--red)",
+                          background: emp.efficiency >= 90 ? 'var(--green)' : emp.efficiency >= 75 ? 'var(--amber)' : 'var(--red)',
                         }}
                       />
                     </div>
@@ -180,27 +190,12 @@ function PayrollTab({ onViewEmployee }) {
                 <td className={styles.td}>
                   <button
                     className={styles.printBtn}
-                    onClick={() =>
-                      addToast(`Payroll slip for ${emp.name} sent to printer.`)
-                    }
+                    onClick={() => handlePrintSlip(emp)}
                     title="Print"
                   >
                     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                      <rect
-                        x="2"
-                        y="5"
-                        width="11"
-                        height="7"
-                        rx="1"
-                        stroke="currentColor"
-                        strokeWidth="1.3"
-                      />
-                      <path
-                        d="M4.5 5V3h6v2M4.5 9h6M4.5 11.5h4"
-                        stroke="currentColor"
-                        strokeWidth="1.3"
-                        strokeLinecap="round"
-                      />
+                      <rect x="2" y="5" width="11" height="7" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+                      <path d="M4.5 5V3h6v2M4.5 9h6M4.5 11.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
                     </svg>
                   </button>
                 </td>
@@ -210,7 +205,7 @@ function PayrollTab({ onViewEmployee }) {
         </table>
       </div>
     </div>
-  );
+  )
 }
 
 /* ── Add Gate Pass Modal ────────────────────────────────────── */
@@ -572,82 +567,138 @@ function ExportTab() {
 /* ── Quick Action Panel ────────────────────────────────────── */
 function QuickActionPanel() {
   const { currentUser, addRequest, addGatePass, addToast } = useApp();
-  const [type,        setType]        = useState("");
-  const [dateFrom,    setDateFrom]    = useState("");
-  const [dateTo,      setDateTo]      = useState("");
-  const [timeFrom,    setTimeFrom]    = useState("");
-  const [timeTo,      setTimeTo]      = useState("");
+  const [type, setType] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [timeFrom, setTimeFrom] = useState("");
+  const [timeTo, setTimeTo] = useState("");
   const [destination, setDestination] = useState("");
-  const [reasonType,  setReasonType]  = useState("");
-  const [note,        setNote]        = useState("");
-  const [sending,     setSending]     = useState(false);
+  const [reasonType, setReasonType] = useState("");
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
 
   const REASON_OPTIONS = {
-    Vacation:               ["Paid Leave", "Exceptional Leave", "Compensatory Leave", "Unpaid Leave"],
+    Vacation: [
+      "Paid Leave",
+      "Exceptional Leave",
+      "Compensatory Leave",
+      "Unpaid Leave",
+    ],
     "Absence Authorization": [],
-    "Exit Pass":            ["Personal", "Work"],
-    "Time Off Activity":    ["Mission", "Training"],
+    "Exit Pass": ["Personal", "Work"],
+    "Time Off Activity": ["Mission", "Training"],
   };
 
   const handleTypeChange = (e) => {
     setType(e.target.value);
     setReasonType("");
-    setDateFrom(""); setDateTo("");
-    setTimeFrom(""); setTimeTo("");
-    setDestination(""); setNote("");
+    setDateFrom("");
+    setDateTo("");
+    setTimeFrom("");
+    setTimeTo("");
+    setDestination("");
+    setNote("");
   };
 
   // ── Shared sub-components ──────────────────────────────────
-  const DateField   = ({ label }) => (
+  const DateField = ({ label }) => (
     <FormField label={label || "Date"}>
-      <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+      <Input
+        type="date"
+        value={dateFrom}
+        onChange={(e) => setDateFrom(e.target.value)}
+      />
     </FormField>
-  )
+  );
 
   const DateRangeField = () => (
     <FormField label="Period">
       <div className={styles.dateRow}>
-        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="Start date" />
-        <Input type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)}   min={dateFrom || undefined} placeholder="End date"
-          style={dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom) ? { borderColor: 'var(--red)' } : {}}
+        <Input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          placeholder="Start date"
+        />
+        <Input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          min={dateFrom || undefined}
+          placeholder="End date"
+          style={
+            dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)
+              ? { borderColor: "var(--red)" }
+              : {}
+          }
         />
       </div>
       {dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom) && (
-        <span style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: 4, display: 'block' }}>
+        <span
+          style={{
+            color: "var(--red)",
+            fontSize: "0.72rem",
+            marginTop: 4,
+            display: "block",
+          }}
+        >
           End date cannot be before start date
         </span>
       )}
     </FormField>
-  )
+  );
 
   const TimeRangeField = () => (
     <FormField label="Time">
       <div className={styles.dateRow}>
-        <Input type="time" value={timeFrom} onChange={e => setTimeFrom(e.target.value)} />
-        <Input type="time" value={timeTo}   onChange={e => setTimeTo(e.target.value)}
+        <Input
+          type="time"
+          value={timeFrom}
+          onChange={(e) => setTimeFrom(e.target.value)}
+        />
+        <Input
+          type="time"
+          value={timeTo}
+          onChange={(e) => setTimeTo(e.target.value)}
           min={timeFrom || undefined}
-          style={timeFrom && timeTo && timeTo <= timeFrom ? { borderColor: 'var(--red)' } : {}}
+          style={
+            timeFrom && timeTo && timeTo <= timeFrom
+              ? { borderColor: "var(--red)" }
+              : {}
+          }
         />
       </div>
       {timeFrom && timeTo && timeTo <= timeFrom && (
-        <span style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: 4, display: 'block' }}>
+        <span
+          style={{
+            color: "var(--red)",
+            fontSize: "0.72rem",
+            marginTop: 4,
+            display: "block",
+          }}
+        >
           End time must be after {timeFrom}
         </span>
       )}
     </FormField>
-  )
+  );
 
   const DestinationField = () => (
     <FormField label="Destination">
-      <Input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. Head Office, Site B…" />
+      <Input
+        type="text"
+        value={destination}
+        onChange={(e) => setDestination(e.target.value)}
+        placeholder="e.g. Head Office, Site B…"
+      />
     </FormField>
-  )
+  );
 
-  const TypeRadioField = () => (
+  const TypeRadioField = () =>
     REASON_OPTIONS[type]?.length > 0 && (
       <FormField label="Type">
         <div className={styles.radioRow}>
-          {REASON_OPTIONS[type].map(opt => (
+          {REASON_OPTIONS[type].map((opt) => (
             <label key={opt} className={styles.radioLabel}>
               <input
                 type="radio"
@@ -661,71 +712,136 @@ function QuickActionPanel() {
           ))}
         </div>
       </FormField>
-    )
-  )
+    );
 
   const NoteField = () => (
     <FormField label="Note / Justification">
-      <Textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Enter justification…" rows={4} />
+      <Textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Enter justification…"
+        rows={4}
+      />
     </FormField>
-  )
+  );
 
   // ── Validation & send (unchanged logic) ───────────────────
   const handleSend = async () => {
-    if (!type) { addToast("Please select a request type.", "error"); return; }
+    if (!type) {
+      addToast("Please select a request type.", "error");
+      return;
+    }
 
     const availableOptions = REASON_OPTIONS[type] || [];
     if (availableOptions.length > 0 && !reasonType) {
-      addToast(`Please select a type for ${type}.`, "error"); return;
+      addToast(`Please select a type for ${type}.`, "error");
+      return;
     }
     const isTimeRequired = ["Exit Pass", "Time Off Activity"].includes(type);
     if (isTimeRequired) {
-      if (!timeFrom || !timeTo) { addToast(`Start and end times are required for ${type}.`, "error"); return; }
-      if (timeTo <= timeFrom)   { addToast("End time must be later than start time.", "error"); return; }
+      if (!timeFrom || !timeTo) {
+        addToast(`Start and end times are required for ${type}.`, "error");
+        return;
+      }
+      if (timeTo <= timeFrom) {
+        addToast("End time must be later than start time.", "error");
+        return;
+      }
     }
-    if (type !== "Exit Pass" && !dateFrom) { addToast("Start date is required.", "error"); return; }
-    const isDateToRequired = !["Absence Authorization", "Exit Pass"].includes(type);
-    if (isDateToRequired && !dateTo) { addToast("End date is required.", "error"); return; }
-    if (dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)) { addToast("End date cannot be before start date.", "error"); return; }
-    const isDestExcluded = ["Absence Authorization", "Time Off Activity"].includes(type);
-    if (!isDestExcluded && !destination.trim()) { addToast("Destination is required for this request.", "error"); return; }
+    if (type !== "Exit Pass" && !dateFrom) {
+      addToast("Start date is required.", "error");
+      return;
+    }
+    const isDateToRequired = !["Absence Authorization", "Exit Pass"].includes(
+      type,
+    );
+    if (isDateToRequired && !dateTo) {
+      addToast("End date is required.", "error");
+      return;
+    }
+    if (dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)) {
+      addToast("End date cannot be before start date.", "error");
+      return;
+    }
+    const isDestExcluded = [
+      "Absence Authorization",
+      "Time Off Activity",
+    ].includes(type);
+    if (!isDestExcluded && !destination.trim()) {
+      addToast("Destination is required for this request.", "error");
+      return;
+    }
 
     setSending(true);
     const token = localStorage.getItem("token");
     const payload = {
       type,
       reason_type: REASON_OPTIONS[type]?.length > 0 ? reasonType || null : null,
-      date_from:   dateFrom    || null,
-      date_to:     dateTo      || null,
-      time_from:   timeFrom    || null,
-      time_to:     timeTo      || null,
+      date_from: dateFrom || null,
+      date_to: dateTo || null,
+      time_from: timeFrom || null,
+      time_to: timeTo || null,
       destination: destination || null,
-      note:        note        || null,
-      status:      "PENDING",
+      note: note || null,
+      status: "PENDING",
     };
 
-    const id   = `LR-${String(Math.floor(Math.random() * 9000 + 1000))}`
-    const days = dateFrom && dateTo ? Math.max(1, Math.ceil((new Date(dateTo) - new Date(dateFrom)) / 86400000)) : 1
+    const id = `LR-${String(Math.floor(Math.random() * 9000 + 1000))}`;
+    const days =
+      dateFrom && dateTo
+        ? Math.max(
+            1,
+            Math.ceil((new Date(dateTo) - new Date(dateFrom)) / 86400000),
+          )
+        : 1;
     addRequest({
-      id, employee: currentUser?.name || "Unknown", type, days, status: "PENDING",
-      date: new Date().toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }),
-      from: dateFrom, to: dateTo, timeFrom, timeTo, destination, reasonType, note,
-    })
+      id,
+      employee: currentUser?.name || "Unknown",
+      type,
+      days,
+      status: "PENDING",
+      date: new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      from: dateFrom,
+      to: dateTo,
+      timeFrom,
+      timeTo,
+      destination,
+      reasonType,
+      note,
+    });
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/requests`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) { const err = await response.json(); throw new Error(err.message || "Server error"); }
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Server error");
+      }
       addToast(`${type} submitted successfully.`);
     } catch (err) {
       addToast(`Submitted locally. Sync failed: ${err.message}`, "warning");
     }
 
-    setType(""); setDateFrom(""); setDateTo(""); setTimeFrom(""); setTimeTo("");
-    setDestination(""); setReasonType(""); setNote(""); setSending(false);
+    setType("");
+    setDateFrom("");
+    setDateTo("");
+    setTimeFrom("");
+    setTimeTo("");
+    setDestination("");
+    setReasonType("");
+    setNote("");
+    setSending(false);
   };
 
   return (
@@ -736,7 +852,6 @@ function QuickActionPanel() {
       </div>
 
       <div className={styles.quickBody}>
-
         {/* ── Request Type selector — always visible ── */}
         <FormField label="Request Type">
           <Select value={type} onChange={handleTypeChange}>
@@ -788,20 +903,32 @@ function QuickActionPanel() {
             <NoteField />
           </>
         )}
-
       </div>
 
       <div className={styles.quickFooter}>
-        <Button variant="primary" size="lg" fullWidth onClick={handleSend} disabled={sending || !type}>
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          onClick={handleSend}
+          disabled={sending || !type}
+        >
           {sending ? "SENDING…" : "SEND"}
           {!sending && (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M3 8h10M9 4l4 4-4 4"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           )}
         </Button>
         <div className={styles.signedBy}>
-          SIGNED: {currentUser?.name?.toUpperCase()} · ID: {currentUser?.id?.slice(-5)}
+          SIGNED: {currentUser?.name?.toUpperCase()} · ID:{" "}
+          {currentUser?.id?.slice(-5)}
         </div>
       </div>
     </div>
@@ -811,12 +938,14 @@ function QuickActionPanel() {
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function DocumentsPage() {
   const [searchParams] = useSearchParams();
-  const { currentUser } = useApp()
+  const { currentUser } = useApp();
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "payroll",
   );
   const [profileEmp, setProfileEmp] = useState(null);
-  const hideQuickPanel = ['direction', 'department'].includes(currentUser?.unit?.unit_type)
+  const hideQuickPanel = ["direction", "department"].includes(
+    currentUser?.unit?.unit_type,
+  );
 
   return (
     <div className={styles.page}>
