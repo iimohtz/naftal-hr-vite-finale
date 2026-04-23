@@ -316,10 +316,20 @@ function DemandsChart({ onSliceClick }) {
 
 /* ── Requests Panel ────────────────────────────────────────── */
 function RequestsPanel({ selectedType, onClearFilter }) {
-  const { requests, updateRequestStatus, employees, currentUser, addToast } =
-    useApp();
+  const { requests, updateRequestStatus, employees, currentUser, addToast } = useApp();
   const [showHistory, setShowHistory] = useState(false);
   const [selectedReq, setSelectedReq] = useState(null);
+
+  // Determine which statuses are considered "pending" (actionable) for the current user
+  const isPendingForUser = (status) => {
+    const lowerStatus = (status || "").toLowerCase();
+    if (currentUser?.unit_type === "direction") {
+      // Directors can approve requests that are pending or already approved by department chef
+      return lowerStatus === "pending" || lowerStatus === "approved by department chef";
+    }
+    // Department heads and regular employees only see raw pending requests
+    return lowerStatus === "pending";
+  };
 
   const getEmployeeName = (req) => {
     if (req.person_id) {
@@ -346,10 +356,7 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     }
 
     try {
-      const { signature, signed_data } = await signApproval(
-        req.id,
-        currentUser.id,
-      );
+      const { signature, signed_data } = await signApproval(req.id, currentUser.id);
       console.log("SIGNATURE PAYLOAD:", { signature, signed_data });
 
       const token = localStorage.getItem("token");
@@ -383,10 +390,9 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     addToast(`Request #${req.id} rejected.`, "warning");
   };
 
-  const isPending = (r) => ["pending", "PENDING"].includes(r.status);
-
-  let pendingList = requests.filter(isPending);
-  let historyList = requests.filter((r) => !isPending(r));
+  // Filter requests based on current user's pending definition
+  let pendingList = requests.filter(r => isPendingForUser(r.status));
+  let historyList = requests.filter(r => !isPendingForUser(r.status));
 
   if (selectedType) {
     pendingList = pendingList.filter((r) => r.type === selectedType);
@@ -481,7 +487,7 @@ function RequestsPanel({ selectedType, onClearFilter }) {
                     >
                       <EyeIcon />
                     </button>
-                    {isPending(req) ? (
+                    {isPendingForUser(req.status) ? (
                       <>
                         <button
                           className={styles.approveBtn}
