@@ -572,178 +572,160 @@ function ExportTab() {
 /* ── Quick Action Panel ────────────────────────────────────── */
 function QuickActionPanel() {
   const { currentUser, addRequest, addGatePass, addToast } = useApp();
-  const [type, setType] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [timeFrom, setTimeFrom] = useState("");
-  const [timeTo, setTimeTo] = useState("");
+  const [type,        setType]        = useState("");
+  const [dateFrom,    setDateFrom]    = useState("");
+  const [dateTo,      setDateTo]      = useState("");
+  const [timeFrom,    setTimeFrom]    = useState("");
+  const [timeTo,      setTimeTo]      = useState("");
   const [destination, setDestination] = useState("");
-  const [reasonType, setReasonType] = useState("");
-  const [note, setNote] = useState("");
-  const [sending, setSending] = useState(false);
+  const [reasonType,  setReasonType]  = useState("");
+  const [note,        setNote]        = useState("");
+  const [sending,     setSending]     = useState(false);
 
   const REASON_OPTIONS = {
-    Vacation: [
-      "Paid Leave",
-      "Exceptional Leave",
-      "Compensatory Leave",
-      "Unpaid Leave",
-    ],
+    Vacation:               ["Paid Leave", "Exceptional Leave", "Compensatory Leave", "Unpaid Leave"],
     "Absence Authorization": [],
-    "Exit Pass": ["Personal", "Work"],
-    "Time Off Activity": ["Mission", "Training"],
+    "Exit Pass":            ["Personal", "Work"],
+    "Time Off Activity":    ["Mission", "Training"],
   };
 
   const handleTypeChange = (e) => {
     setType(e.target.value);
     setReasonType("");
+    setDateFrom(""); setDateTo("");
+    setTimeFrom(""); setTimeTo("");
+    setDestination(""); setNote("");
   };
 
-  const handleSend = async () => {
-    if (!type) {
-      addToast("Please select a request type.", "error");
-      return;
-    }
+  // ── Shared sub-components ──────────────────────────────────
+  const DateField   = ({ label }) => (
+    <FormField label={label || "Date"}>
+      <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+    </FormField>
+  )
 
-    // 2. Reason Category Validation (Mandatory if options exist)
+  const DateRangeField = () => (
+    <FormField label="Period">
+      <div className={styles.dateRow}>
+        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="Start date" />
+        <Input type="date" value={dateTo}   onChange={e => setDateTo(e.target.value)}   min={dateFrom || undefined} placeholder="End date"
+          style={dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom) ? { borderColor: 'var(--red)' } : {}}
+        />
+      </div>
+      {dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom) && (
+        <span style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: 4, display: 'block' }}>
+          End date cannot be before start date
+        </span>
+      )}
+    </FormField>
+  )
+
+  const TimeRangeField = () => (
+    <FormField label="Time">
+      <div className={styles.dateRow}>
+        <Input type="time" value={timeFrom} onChange={e => setTimeFrom(e.target.value)} />
+        <Input type="time" value={timeTo}   onChange={e => setTimeTo(e.target.value)}
+          min={timeFrom || undefined}
+          style={timeFrom && timeTo && timeTo <= timeFrom ? { borderColor: 'var(--red)' } : {}}
+        />
+      </div>
+      {timeFrom && timeTo && timeTo <= timeFrom && (
+        <span style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: 4, display: 'block' }}>
+          End time must be after {timeFrom}
+        </span>
+      )}
+    </FormField>
+  )
+
+  const DestinationField = () => (
+    <FormField label="Destination">
+      <Input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="e.g. Head Office, Site B…" />
+    </FormField>
+  )
+
+  const TypeRadioField = () => (
+    REASON_OPTIONS[type]?.length > 0 && (
+      <FormField label="Type">
+        <div className={styles.radioRow}>
+          {REASON_OPTIONS[type].map(opt => (
+            <label key={opt} className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="reasonType"
+                value={opt.toLowerCase()}
+                checked={reasonType === opt.toLowerCase()}
+                onChange={() => setReasonType(opt.toLowerCase())}
+              />
+              <span>{opt}</span>
+            </label>
+          ))}
+        </div>
+      </FormField>
+    )
+  )
+
+  const NoteField = () => (
+    <FormField label="Note / Justification">
+      <Textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Enter justification…" rows={4} />
+    </FormField>
+  )
+
+  // ── Validation & send (unchanged logic) ───────────────────
+  const handleSend = async () => {
+    if (!type) { addToast("Please select a request type.", "error"); return; }
+
     const availableOptions = REASON_OPTIONS[type] || [];
     if (availableOptions.length > 0 && !reasonType) {
-      addToast(`Please select a specific category for ${type}.`, "error");
-      return;
+      addToast(`Please select a type for ${type}.`, "error"); return;
     }
-
-    // 3. Time Validation: Required for Exit Pass or Time Off Activity
     const isTimeRequired = ["Exit Pass", "Time Off Activity"].includes(type);
     if (isTimeRequired) {
-      if (!timeFrom || !timeTo) {
-        addToast(`Start and end times are required for ${type}.`, "error");
-        return;
-      }
-      if (timeTo <= timeFrom) {
-        addToast("The end time must be later than the start time.", "error");
-        return;
-      }
+      if (!timeFrom || !timeTo) { addToast(`Start and end times are required for ${type}.`, "error"); return; }
+      if (timeTo <= timeFrom)   { addToast("End time must be later than start time.", "error"); return; }
     }
-    if (type !== "Exit Pass" && !dateFrom) {
-      addToast("Start date is required.", "error");
-      return;
-    }
-    // date_to: required unless Absence Authorization or Exit Pass
-    const isDateToRequired = !["Absence Authorization", "Exit Pass"].includes(
-      type,
-    );
-    if (isDateToRequired && !dateTo) {
-      addToast("End date is required.", "error");
-      return;
-    }
-    if (dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)) {
-      addToast("End date cannot be before start date.", "error");
-      return;
-    }
-
-    // 5. Destination Validation: required_unless Absence Authorization or Time Off Activity
-    const isDestExcluded = [
-      "Absence Authorization",
-      "Time Off Activity",
-    ].includes(type);
-    if (!isDestExcluded && !destination.trim()) {
-      addToast("Destination is required for this request.", "error");
-      return;
-    }
+    if (type !== "Exit Pass" && !dateFrom) { addToast("Start date is required.", "error"); return; }
+    const isDateToRequired = !["Absence Authorization", "Exit Pass"].includes(type);
+    if (isDateToRequired && !dateTo) { addToast("End date is required.", "error"); return; }
+    if (dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)) { addToast("End date cannot be before start date.", "error"); return; }
+    const isDestExcluded = ["Absence Authorization", "Time Off Activity"].includes(type);
+    if (!isDestExcluded && !destination.trim()) { addToast("Destination is required for this request.", "error"); return; }
 
     setSending(true);
     const token = localStorage.getItem("token");
-
     const payload = {
-      type: type,
+      type,
       reason_type: REASON_OPTIONS[type]?.length > 0 ? reasonType || null : null,
-      date_from: dateFrom || null,
-      date_to: dateTo || null,
-      time_from: timeFrom || null,
-      time_to: timeTo || null,
+      date_from:   dateFrom    || null,
+      date_to:     dateTo      || null,
+      time_from:   timeFrom    || null,
+      time_to:     timeTo      || null,
       destination: destination || null,
-      note: note || null,
-      status: "PENDING",
+      note:        note        || null,
+      status:      "PENDING",
     };
 
-    if (type === "Gate Pass") {
-      const id = `GP-${Math.floor(Math.random() * 90000 + 10000)}`;
-      const timeWindow = timeFrom && timeTo ? `${timeFrom} – ${timeTo}` : "TBD";
-      const dateWindow = dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : "TBD";
-      addGatePass({
-        id,
-        employee: currentUser?.name || "Unknown",
-        destination: destination || "TBD",
-        date: dateFrom || "Today",
-        window: `${dateWindow} · ${timeWindow}`,
-        status: "PENDING",
-        time: new Date().toTimeString().slice(0, 5),
-        reason: note,
-        reasonType,
-        timeFrom,
-        timeTo,
-      });
-    } else {
-      const id = `LR-${String(Math.floor(Math.random() * 9000 + 1000))}`;
-      const days =
-        dateFrom && dateTo
-          ? Math.max(
-              1,
-              Math.ceil((new Date(dateTo) - new Date(dateFrom)) / 86400000),
-            )
-          : 1;
-      addRequest({
-        id,
-        employee: currentUser?.name || "Unknown",
-        type: type.replace(" Leave", ""),
-        days,
-        status: "PENDING",
-        date: new Date().toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        from: dateFrom,
-        to: dateTo,
-        timeFrom,
-        timeTo,
-        destination,
-        reasonType,
-        note,
-      });
-    }
-    console.log("REQUEST PAYLOAD:", JSON.stringify(payload, null, 2));
+    const id   = `LR-${String(Math.floor(Math.random() * 9000 + 1000))}`
+    const days = dateFrom && dateTo ? Math.max(1, Math.ceil((new Date(dateTo) - new Date(dateFrom)) / 86400000)) : 1
+    addRequest({
+      id, employee: currentUser?.name || "Unknown", type, days, status: "PENDING",
+      date: new Date().toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }),
+      from: dateFrom, to: dateTo, timeFrom, timeTo, destination, reasonType, note,
+    })
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/requests`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || "Server error");
-      }
-
+      if (!response.ok) { const err = await response.json(); throw new Error(err.message || "Server error"); }
       addToast(`${type} submitted successfully.`);
     } catch (err) {
       addToast(`Submitted locally. Sync failed: ${err.message}`, "warning");
-      console.log(err.message);
     }
 
-    setType("");
-    setDateFrom("");
-    setDateTo("");
-    setTimeFrom("");
-    setTimeTo("");
-    setDestination("");
-    setReasonType("");
-    setNote("");
-    setSending(false);
+    setType(""); setDateFrom(""); setDateTo(""); setTimeFrom(""); setTimeTo("");
+    setDestination(""); setReasonType(""); setNote(""); setSending(false);
   };
 
   return (
@@ -754,6 +736,8 @@ function QuickActionPanel() {
       </div>
 
       <div className={styles.quickBody}>
+
+        {/* ── Request Type selector — always visible ── */}
         <FormField label="Request Type">
           <Select value={type} onChange={handleTypeChange}>
             <option value="">SELECT REQUEST TYPE…</option>
@@ -763,115 +747,61 @@ function QuickActionPanel() {
             <option>Time Off Activity</option>
           </Select>
         </FormField>
-        <FormField label="Duration / Period">
-          <div className={styles.dateRow}>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
-        </FormField>
-        <FormField label="Time">
-          <div className={styles.dateRow}>
-            <Input
-              type="time"
-              value={timeFrom}
-              onChange={(e) => setTimeFrom(e.target.value)}
-            />
-            <Input
-              type="time"
-              value={timeTo}
-              onChange={(e) => setTimeTo(e.target.value)}
-              min={timeFrom || undefined}
-              style={
-                timeFrom && timeTo && timeTo <= timeFrom
-                  ? { borderColor: "var(--red)" }
-                  : {}
-              }
-            />
-          </div>
-          {timeFrom && timeTo && timeTo <= timeFrom && (
-            <span
-              style={{
-                color: "var(--red)",
-                fontSize: "0.72rem",
-                marginTop: 4,
-                display: "block",
-              }}
-            >
-              End time must be after {timeFrom}
-            </span>
-          )}
-        </FormField>
-        <FormField label="Destination ">
-          <Input
-            type="text"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            placeholder="e.g. Head Office, Site B…"
-          />
-        </FormField>
 
-        {/* Reason Category — only shown when the selected type has options */}
-        {type && REASON_OPTIONS[type]?.length > 0 && (
-          <FormField label="Reason Category">
-            <div className={styles.radioRow}>
-              {REASON_OPTIONS[type].map((opt) => (
-                <label key={opt} className={styles.radioLabel}>
-                  <input
-                    type="radio"
-                    name="reasonType"
-                    value={opt.toLowerCase()}
-                    checked={reasonType === opt.toLowerCase()}
-                    onChange={() => setReasonType(opt.toLowerCase())}
-                  />
-                  <span>{opt}</span>
-                </label>
-              ))}
-            </div>
-          </FormField>
+        {/* ── Absence Authorization ── */}
+        {type === "Absence Authorization" && (
+          <>
+            <DateField label="Date" />
+            <TimeRangeField />
+            <NoteField />
+          </>
         )}
 
-        <FormField label="Internal Note / Justification">
-          <Textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Enter justification…"
-            rows={5}
-          />
-        </FormField>
+        {/* ── Exit Pass ── */}
+        {type === "Exit Pass" && (
+          <>
+            <DateField label="Date" />
+            <TimeRangeField />
+            <DestinationField />
+            <TypeRadioField />
+            <NoteField />
+          </>
+        )}
+
+        {/* ── Vacation ── */}
+        {type === "Vacation" && (
+          <>
+            <DateRangeField />
+            <DestinationField />
+            <TypeRadioField />
+            <NoteField />
+          </>
+        )}
+
+        {/* ── Time Off Activity ── */}
+        {type === "Time Off Activity" && (
+          <>
+            <DateField label="Date" />
+            <TimeRangeField />
+            <DestinationField />
+            <TypeRadioField />
+            <NoteField />
+          </>
+        )}
+
       </div>
 
       <div className={styles.quickFooter}>
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          onClick={handleSend}
-          disabled={sending}
-        >
+        <Button variant="primary" size="lg" fullWidth onClick={handleSend} disabled={sending || !type}>
           {sending ? "SENDING…" : "SEND"}
           {!sending && (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M3 8h10M9 4l4 4-4 4"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
         </Button>
         <div className={styles.signedBy}>
-          SIGNED: {currentUser?.name?.toUpperCase()} · ID:{" "}
-          {currentUser?.id?.slice(-5)}
+          SIGNED: {currentUser?.name?.toUpperCase()} · ID: {currentUser?.id?.slice(-5)}
         </div>
       </div>
     </div>
