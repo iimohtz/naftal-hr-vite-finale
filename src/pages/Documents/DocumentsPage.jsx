@@ -564,6 +564,136 @@ function ExportTab() {
   );
 }
 
+/* ── Quick Action Panel — shared sub-components ────────────── */
+// FIX: These were previously defined *inside* QuickActionPanel, which caused
+// React to treat them as brand-new component types on every render, unmounting
+// and remounting the inputs and losing focus after each keystroke.
+// They are now defined at module level and receive state/setters as props.
+
+const DateField = ({ label, dateFrom, setDateFrom }) => (
+  <FormField label={label || "Date"}>
+    <Input
+      type="date"
+      value={dateFrom}
+      onChange={(e) => setDateFrom(e.target.value)}
+    />
+  </FormField>
+);
+
+const DateRangeField = ({ dateFrom, setDateFrom, dateTo, setDateTo }) => (
+  <FormField label="Period">
+    <div className={styles.dateRow}>
+      <Input
+        type="date"
+        value={dateFrom}
+        onChange={(e) => setDateFrom(e.target.value)}
+        placeholder="Start date"
+      />
+      <Input
+        type="date"
+        value={dateTo}
+        onChange={(e) => setDateTo(e.target.value)}
+        min={dateFrom || undefined}
+        placeholder="End date"
+        style={
+          dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)
+            ? { borderColor: "var(--red)" }
+            : {}
+        }
+      />
+    </div>
+    {dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom) && (
+      <span
+        style={{
+          color: "var(--red)",
+          fontSize: "0.72rem",
+          marginTop: 4,
+          display: "block",
+        }}
+      >
+        End date cannot be before start date
+      </span>
+    )}
+  </FormField>
+);
+
+const TimeRangeField = ({ timeFrom, setTimeFrom, timeTo, setTimeTo }) => (
+  <FormField label="Time">
+    <div className={styles.dateRow}>
+      <Input
+        type="time"
+        value={timeFrom}
+        onChange={(e) => setTimeFrom(e.target.value)}
+      />
+      <Input
+        type="time"
+        value={timeTo}
+        onChange={(e) => setTimeTo(e.target.value)}
+        min={timeFrom || undefined}
+        style={
+          timeFrom && timeTo && timeTo <= timeFrom
+            ? { borderColor: "var(--red)" }
+            : {}
+        }
+      />
+    </div>
+    {timeFrom && timeTo && timeTo <= timeFrom && (
+      <span
+        style={{
+          color: "var(--red)",
+          fontSize: "0.72rem",
+          marginTop: 4,
+          display: "block",
+        }}
+      >
+        End time must be after {timeFrom}
+      </span>
+    )}
+  </FormField>
+);
+
+const DestinationField = ({ destination, setDestination }) => (
+  <FormField label="Destination">
+    <Input
+      type="text"
+      value={destination}
+      onChange={(e) => setDestination(e.target.value)}
+      placeholder="e.g. Head Office, Site B…"
+    />
+  </FormField>
+);
+
+const TypeRadioField = ({ type, reasonType, setReasonType, reasonOptions }) =>
+  reasonOptions?.length > 0 && (
+    <FormField label="Type">
+      <div className={styles.radioRow}>
+        {reasonOptions.map((opt) => (
+          <label key={opt} className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="reasonType"
+              value={opt.toLowerCase()}
+              checked={reasonType === opt.toLowerCase()}
+              onChange={() => setReasonType(opt.toLowerCase())}
+            />
+            <span>{opt}</span>
+          </label>
+        ))}
+      </div>
+    </FormField>
+  );
+
+const NoteField = ({ note, setNote }) => (
+  <FormField label="Note / Justification">
+    <Textarea
+      value={note}
+      onChange={(e) => setNote(e.target.value)}
+      placeholder="Enter justification…"
+      rows={4}
+    />
+  </FormField>
+);
+
 /* ── Quick Action Panel ────────────────────────────────────── */
 function QuickActionPanel() {
   const { currentUser, addRequest, addGatePass, addToast } = useApp();
@@ -600,132 +730,7 @@ function QuickActionPanel() {
     setNote("");
   };
 
-  // ── Shared sub-components ──────────────────────────────────
-  const DateField = ({ label }) => (
-    <FormField label={label || "Date"}>
-      <Input
-        type="date"
-        value={dateFrom}
-        onChange={(e) => setDateFrom(e.target.value)}
-      />
-    </FormField>
-  );
-
-  const DateRangeField = () => (
-    <FormField label="Period">
-      <div className={styles.dateRow}>
-        <Input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          placeholder="Start date"
-        />
-        <Input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          min={dateFrom || undefined}
-          placeholder="End date"
-          style={
-            dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom)
-              ? { borderColor: "var(--red)" }
-              : {}
-          }
-        />
-      </div>
-      {dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom) && (
-        <span
-          style={{
-            color: "var(--red)",
-            fontSize: "0.72rem",
-            marginTop: 4,
-            display: "block",
-          }}
-        >
-          End date cannot be before start date
-        </span>
-      )}
-    </FormField>
-  );
-
-  const TimeRangeField = () => (
-    <FormField label="Time">
-      <div className={styles.dateRow}>
-        <Input
-          type="time"
-          value={timeFrom}
-          onChange={(e) => setTimeFrom(e.target.value)}
-        />
-        <Input
-          type="time"
-          value={timeTo}
-          onChange={(e) => setTimeTo(e.target.value)}
-          min={timeFrom || undefined}
-          style={
-            timeFrom && timeTo && timeTo <= timeFrom
-              ? { borderColor: "var(--red)" }
-              : {}
-          }
-        />
-      </div>
-      {timeFrom && timeTo && timeTo <= timeFrom && (
-        <span
-          style={{
-            color: "var(--red)",
-            fontSize: "0.72rem",
-            marginTop: 4,
-            display: "block",
-          }}
-        >
-          End time must be after {timeFrom}
-        </span>
-      )}
-    </FormField>
-  );
-
-  const DestinationField = () => (
-    <FormField label="Destination">
-      <Input
-        type="text"
-        value={destination}
-        onChange={(e) => setDestination(e.target.value)}
-        placeholder="e.g. Head Office, Site B…"
-      />
-    </FormField>
-  );
-
-  const TypeRadioField = () =>
-    REASON_OPTIONS[type]?.length > 0 && (
-      <FormField label="Type">
-        <div className={styles.radioRow}>
-          {REASON_OPTIONS[type].map((opt) => (
-            <label key={opt} className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="reasonType"
-                value={opt.toLowerCase()}
-                checked={reasonType === opt.toLowerCase()}
-                onChange={() => setReasonType(opt.toLowerCase())}
-              />
-              <span>{opt}</span>
-            </label>
-          ))}
-        </div>
-      </FormField>
-    );
-
-  const NoteField = () => (
-    <FormField label="Note / Justification">
-      <Textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Enter justification…"
-        rows={4}
-      />
-    </FormField>
-  );
-
-  // ── Validation & send (unchanged logic) ───────────────────
+  // ── Validation & send ─────────────────────────────────────
   const handleSend = async () => {
     if (!type) {
       addToast("Please select a request type.", "error");
@@ -866,41 +871,41 @@ function QuickActionPanel() {
         {/* ── Absence Authorization ── */}
         {type === "Absence Authorization" && (
           <>
-            <DateField label="Date" />
-            <TimeRangeField />
-            <NoteField />
+            <DateField label="Date" dateFrom={dateFrom} setDateFrom={setDateFrom} />
+            <TimeRangeField timeFrom={timeFrom} setTimeFrom={setTimeFrom} timeTo={timeTo} setTimeTo={setTimeTo} />
+            <NoteField note={note} setNote={setNote} />
           </>
         )}
 
         {/* ── Exit Pass ── */}
         {type === "Exit Pass" && (
           <>
-            <DateField label="Date" />
-            <TimeRangeField />
-            <DestinationField />
-            <TypeRadioField />
-            <NoteField />
+            <DateField label="Date" dateFrom={dateFrom} setDateFrom={setDateFrom} />
+            <TimeRangeField timeFrom={timeFrom} setTimeFrom={setTimeFrom} timeTo={timeTo} setTimeTo={setTimeTo} />
+            <DestinationField destination={destination} setDestination={setDestination} />
+            <TypeRadioField type={type} reasonType={reasonType} setReasonType={setReasonType} reasonOptions={REASON_OPTIONS[type]} />
+            <NoteField note={note} setNote={setNote} />
           </>
         )}
 
         {/* ── Vacation ── */}
         {type === "Vacation" && (
           <>
-            <DateRangeField />
-            <DestinationField />
-            <TypeRadioField />
-            <NoteField />
+            <DateRangeField dateFrom={dateFrom} setDateFrom={setDateFrom} dateTo={dateTo} setDateTo={setDateTo} />
+            <DestinationField destination={destination} setDestination={setDestination} />
+            <TypeRadioField type={type} reasonType={reasonType} setReasonType={setReasonType} reasonOptions={REASON_OPTIONS[type]} />
+            <NoteField note={note} setNote={setNote} />
           </>
         )}
 
         {/* ── Time Off Activity ── */}
         {type === "Time Off Activity" && (
           <>
-            <DateField label="Date" />
-            <TimeRangeField />
-            <DestinationField />
-            <TypeRadioField />
-            <NoteField />
+            <DateField label="Date" dateFrom={dateFrom} setDateFrom={setDateFrom} />
+            <TimeRangeField timeFrom={timeFrom} setTimeFrom={setTimeFrom} timeTo={timeTo} setTimeTo={setTimeTo} />
+            <DestinationField destination={destination} setDestination={setDestination} />
+            <TypeRadioField type={type} reasonType={reasonType} setReasonType={setReasonType} reasonOptions={REASON_OPTIONS[type]} />
+            <NoteField note={note} setNote={setNote} />
           </>
         )}
       </div>
