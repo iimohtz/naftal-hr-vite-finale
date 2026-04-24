@@ -7,6 +7,7 @@ import DashboardPage  from './pages/Dashboard/DashboardPage'
 import EmployeesPage  from './pages/Employees/EmployeesPage'
 import DocumentsPage  from './pages/Documents/DocumentsPage'
 import ProfilePage    from './pages/Profile/ProfilePage'
+import SettingsPage from './pages/Settings/SettingsPage'
 
 /* ─────────────────────────────────────────────────────────────
    ProtectedRoute – redirect to /login if no token present
@@ -63,6 +64,7 @@ function AppShell() {
             />
             <Route path="documents" element={<DocumentsPage />} />
             <Route path="profile"   element={<ProfilePage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
