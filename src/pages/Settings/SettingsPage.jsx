@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import styles from './SettingsPage.module.css'
 
-// ── Helper: generate time options every 5 minutes ──────────
 function generateTimeOptions(startHour, endHour) {
   const options = []
   for (let h = startHour; h <= endHour; h++) {
@@ -16,30 +15,58 @@ function generateTimeOptions(startHour, endHour) {
   return options
 }
 
-const MORNING_OPTIONS  = generateTimeOptions(8, 11)   // 07:00 → 10:00
-const ENDWORK_OPTIONS  = generateTimeOptions(14, 18)   // 14:00 → 18:00
+const MORNING_OPTIONS = generateTimeOptions(8, 12)
+const ENDWORK_OPTIONS = generateTimeOptions(14, 18)
 
-// ── Persist to localStorage ────────────────────────────────
 function loadSettings() {
-  try {
-    return JSON.parse(localStorage.getItem('org_settings') || '{}')
-  } catch { return {} }
+  try { return JSON.parse(localStorage.getItem('org_settings') || '{}') }
+  catch { return {} }
 }
 
 export default function SettingsPage() {
   const { addToast } = useApp()
   const saved = loadSettings()
 
-  const [lateThreshold,  setLateThreshold]  = useState(saved.lateThreshold  || '08:30')
-  const [endWorkTime,    setEndWorkTime]     = useState(saved.endWorkTime    || '16:30')
-  const [saving,         setSaving]          = useState(false)
+  const [lateThreshold, setLateThreshold] = useState(saved.lateThreshold || '08:30')
+  const [endWorkTime,   setEndWorkTime]   = useState(saved.endWorkTime   || '16:30')
+  const [saving,        setSaving]        = useState(false)
 
+  // ── Holidays state ─────────────────────────────────────────
+  const [holidays,     setHolidays]     = useState(() => saved.holidays || [])
+  const [pickedDate,   setPickedDate]   = useState('')
+  const [holidayLabel, setHolidayLabel] = useState('')
+
+  const addHoliday = () => {
+    if (!pickedDate) { addToast('Please pick a date.', 'error'); return }
+    if (holidays.find(h => h.date === pickedDate)) {
+      addToast('This date is already marked as a holiday.', 'error'); return
+    }
+    const updated = [...holidays, { date: pickedDate, label: holidayLabel.trim() || 'Holiday' }]
+      .sort((a, b) => a.date.localeCompare(b.date))
+    setHolidays(updated)
+    setPickedDate('')
+    setHolidayLabel('')
+  }
+
+  const removeHoliday = (date) => {
+    setHolidays(prev => prev.filter(h => h.date !== date))
+  }
+
+  const formatDate = (dateStr) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('en-GB', {
+        weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+      })
+    } catch { return dateStr }
+  }
+
+  // ── Save all settings together ────────────────────────────
   const handleSave = async () => {
     setSaving(true)
-    const settings = { lateThreshold, endWorkTime }
+    const settings = { lateThreshold, endWorkTime, holidays }
     localStorage.setItem('org_settings', JSON.stringify(settings))
 
-    // ── When backend is ready, send to API ──
+    // ── Uncomment when backend ready ──
     // const token = localStorage.getItem('token')
     // await fetch(`${import.meta.env.VITE_API_URL}/settings`, {
     //   method: 'POST',
@@ -78,58 +105,29 @@ export default function SettingsPage() {
           </p>
 
           <div className={styles.fieldGroup}>
-
-            {/* Late threshold */}
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>
-                LATE ARRIVAL THRESHOLD
-              </label>
-              <p className={styles.fieldHint}>
-                Employees arriving after this time will be marked as late.
-              </p>
+              <label className={styles.fieldLabel}>LATE ARRIVAL THRESHOLD</label>
+              <p className={styles.fieldHint}>Employees arriving after this time will be marked as late.</p>
               <div className={styles.timeSelector}>
-                <select
-                  className={styles.timeSelect}
-                  value={lateThreshold}
-                  onChange={e => setLateThreshold(e.target.value)}
-                >
-                  {MORNING_OPTIONS.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
+                <select className={styles.timeSelect} value={lateThreshold} onChange={e => setLateThreshold(e.target.value)}>
+                  {MORNING_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <span className={styles.timeBadge}>
-                  Arrivals after {lateThreshold} → LATE
-                </span>
+                <span className={styles.timeBadge}>Arrivals after {lateThreshold} → LATE</span>
               </div>
             </div>
 
-            {/* End work time */}
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>
-                END OF WORK TIME
-              </label>
-              <p className={styles.fieldHint}>
-                The official end of the workday for attendance tracking.
-              </p>
+              <label className={styles.fieldLabel}>END OF WORK TIME</label>
+              <p className={styles.fieldHint}>The official end of the workday for attendance tracking.</p>
               <div className={styles.timeSelector}>
-                <select
-                  className={styles.timeSelect}
-                  value={endWorkTime}
-                  onChange={e => setEndWorkTime(e.target.value)}
-                >
-                  {ENDWORK_OPTIONS.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
+                <select className={styles.timeSelect} value={endWorkTime} onChange={e => setEndWorkTime(e.target.value)}>
+                  {ENDWORK_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <span className={styles.timeBadge}>
-                  Workday ends at {endWorkTime}
-                </span>
+                <span className={styles.timeBadge}>Workday ends at {endWorkTime}</span>
               </div>
             </div>
-
           </div>
 
-          {/* Preview */}
           <div className={styles.preview}>
             <div className={styles.previewTitle}>CURRENT CONFIGURATION</div>
             <div className={styles.previewRow}>
@@ -141,20 +139,89 @@ export default function SettingsPage() {
               <span className={styles.previewVal} style={{ color: 'var(--green)' }}>{endWorkTime}</span>
             </div>
           </div>
-
-          <button
-            className={styles.saveBtn}
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? 'SAVING…' : 'SAVE SETTINGS'}
-            {!saving && (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </button>
         </div>
+
+        {/* ── Holiday Management card ── */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="3" width="14" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M1 7h14M5 1v4M11 1v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            <span className={styles.cardTitle}>HOLIDAY MANAGEMENT</span>
+          </div>
+          <p className={styles.cardDesc}>
+            Mark specific dates as official holidays. These days will be excluded from attendance and late calculations.
+          </p>
+
+          {/* ── Add holiday row ── */}
+          <div className={styles.addHolidayRow}>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={pickedDate}
+              onChange={e => setPickedDate(e.target.value)}
+            />
+            <input
+              type="text"
+              className={styles.labelInput}
+              placeholder="Label (e.g. Eid Al-Fitr)"
+              value={holidayLabel}
+              onChange={e => setHolidayLabel(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addHoliday()}
+            />
+            <button className={styles.addBtn} onClick={addHoliday}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              ADD
+            </button>
+          </div>
+
+          {/* ── Holiday list ── */}
+          {holidays.length === 0 ? (
+            <div className={styles.emptyHolidays}>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" opacity="0.3">
+                <rect x="1" y="5" width="26" height="22" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M1 11h26M9 1v6M19 1v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span>No holidays added yet.</span>
+            </div>
+          ) : (
+            <div className={styles.holidayList}>
+              <div className={styles.holidayListHeader}>
+                <span>{holidays.length} holiday{holidays.length !== 1 ? 's' : ''} configured</span>
+              </div>
+              {holidays.map(h => (
+                <div key={h.date} className={styles.holidayItem}>
+                  <div className={styles.holidayItemLeft}>
+                    <span className={styles.holidayDate}>{formatDate(h.date)}</span>
+                    <span className={styles.holidayLabel}>{h.label}</span>
+                  </div>
+                  <button
+                    className={styles.removeBtn}
+                    onClick={() => removeHoliday(h.date)}
+                    title="Remove holiday"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                      <path d="M2 2l9 9M11 2l-9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Single save button for everything ── */}
+        <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+          {saving ? 'SAVING…' : 'SAVE ALL SETTINGS'}
+          {!saving && (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
 
       </div>
     </div>
