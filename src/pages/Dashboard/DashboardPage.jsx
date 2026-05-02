@@ -323,9 +323,9 @@ function RequestsPanel({ selectedType, onClearFilter }) {
 
   // Determine which statuses are considered "pending" (actionable) for the current user
   const isPendingForUser = (status) => {
-  const s = (status || '').toLowerCase()
-  return s === 'pending'
-}
+    const s = (status || "").toLowerCase();
+    return s === "pending";
+  };
 
   const getEmployeeName = (req) => {
     if (req.person_id) {
@@ -399,7 +399,10 @@ function RequestsPanel({ selectedType, onClearFilter }) {
 
   // Filter requests based on current user's pending definition
   let pendingList = requests.filter((r) => isPendingForUser(r.status));
-  let historyList = requests.filter((r) => !isPendingForUser(r.status));
+  let historyList = requests.filter(r =>
+  !isPendingForUser(r.status) &&
+  r.status !== 'approved by project chef'  
+)
 
   if (selectedType) {
     pendingList = pendingList.filter((r) => r.type === selectedType);
@@ -865,9 +868,9 @@ function ApprovedByChefPanel({ onViewReq }) {
   const { requests, updateRequestStatus, employees, currentUser, addToast } =
     useApp();
 
-  const approvedByChef = requests.filter(r =>
-  r.status === "approved by project chef"
-)
+  const approvedByChef = requests.filter(
+    (r) => r.status === "approved by project chef",
+  );
 
   const getEmployeeName = (req) => {
     if (req.person_id) {
@@ -885,13 +888,19 @@ function ApprovedByChefPanel({ onViewReq }) {
         currentUser.id,
       );
 
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ signature, signed_data })
-      })
-     if (!res.ok) throw new Error((await res.json()).message)
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ signature, signed_data }),
+        },
+      );
+      if (!res.ok) throw new Error((await res.json()).message);
 
       updateRequestStatus(req.id, "FINAL_APPROVED");
       addToast(`Request #${req.id} final approved and signed.`);
@@ -1003,14 +1012,15 @@ function ApprovedByChefPanel({ onViewReq }) {
 /* ── Main ──────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const { currentUser, setRequests, addToast } = useApp();
-  const unitType    = currentUser?.unit_type || ''
-  const isAdmin    = currentUser?.type === 'admin'
-  const isDirector = String(currentUser?.id) === String(currentUser?.unit?.director_id)
-  const canApprove = ['direction', 'department', 'projet'].includes(unitType) && isDirector
-  const canRequest = !["direction"].includes(
-    unitType
-  );
-  const isDeptHead = ['department', 'direction'].includes(unitType)&& isDirector
+  const unitType = currentUser?.unit_type || "";
+  const isAdmin = currentUser?.type === "admin";
+  const isDirector =
+    String(currentUser?.id) === String(currentUser?.unit?.director_id);
+  const canApprove =
+    ["direction", "department", "projet"].includes(unitType) && isDirector;
+  const canRequest = !["direction"].includes(unitType);
+  const isDeptHead =
+    ["department", "direction"].includes(unitType) && isDirector;
 
   const [profileEmp, setProfileEmp] = useState(null);
   const [selectedDemandType, setSelectedDemandType] = useState(null);
@@ -1018,44 +1028,43 @@ export default function DashboardPage() {
   const [detailReq, setDetailReq] = useState(null);
 
   useEffect(() => {
-  const token = localStorage.getItem('token')
-  if (!token) return
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  const fetchDashboardData = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      console.log('Dashboard raw response:', data)
+    const fetchDashboardData = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        console.log("Dashboard raw response:", data);
 
-      const list = data.requests || data.Requests || []
-      const myId = String(currentUser?.id)
+        const list = data.requests || data.Requests || [];
+        const myId = String(currentUser?.id);
 
-      // My own requests → always go to MY REQUESTS panel
-      const mine   = list.filter(r => String(r.person_id) === myId)
+        // My own requests → always go to MY REQUESTS panel
+        const mine = list.filter((r) => String(r.person_id) === myId);
 
-      // Others' requests → go to approval panels (if user can approve)
-      const others = list.filter(r => String(r.person_id) !== myId)
+        // Others' requests → go to approval panels (if user can approve)
+        const others = list.filter((r) => String(r.person_id) !== myId);
 
-      setMyRequests(mine)
+        setMyRequests(mine);
 
-      if (canApprove) {
-        setRequests(others)
+        if (canApprove) {
+          setRequests(others);
+        }
+      } catch (err) {
+        console.error("Dashboard Fetch Error:", err);
+        addToast("Could not sync with server. Showing local data.", "warning");
       }
+    };
 
-    } catch (err) {
-      console.error('Dashboard Fetch Error:', err)
-      addToast('Could not sync with server. Showing local data.', 'warning')
-    }
-  }
-
-  fetchDashboardData()
-}, [])
+    fetchDashboardData();
+  }, []);
   return (
     <div className={styles.page}>
       <KpiStrip />
