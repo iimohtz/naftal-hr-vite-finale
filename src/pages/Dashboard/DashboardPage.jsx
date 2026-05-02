@@ -1003,14 +1003,14 @@ function ApprovedByChefPanel({ onViewReq }) {
 /* ── Main ──────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const { currentUser, setRequests, addToast } = useApp();
-  const isAdmin = currentUser?.type === "admin";
-  const canApprove = ["direction", "department", "projet"].includes(
-    currentUser?.unit_type,
-  );
+  const unitType    = currentUser?.unit_type || ''
+  const isAdmin    = currentUser?.type === 'admin'
+  const isDirector = String(currentUser?.id) === String(currentUser?.unit?.director_id)
+  const canApprove = ['direction', 'department', 'projet'].includes(unitType) && isDirector
   const canRequest = !["direction"].includes(
-    currentUser?.unit_type,
+    unitType
   );
-  const isDeptHead = ['department', 'direction'].includes(currentUser?.unit_type)
+  const isDeptHead = ['department', 'direction'].includes(unitType)&& isDirector
 
   const [profileEmp, setProfileEmp] = useState(null);
   const [selectedDemandType, setSelectedDemandType] = useState(null);
