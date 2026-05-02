@@ -1007,10 +1007,10 @@ export default function DashboardPage() {
   const canApprove = ["direction", "department", "projet"].includes(
     currentUser?.unit_type,
   );
-  const canRequest = !["direction", "department"].includes(
+  const canRequest = !["direction"].includes(
     currentUser?.unit_type,
   );
-  const isDeptHead = currentUser?.unit_type === 'department'
+  const isDeptHead = ['department', 'direction'].includes(currentUser?.unit_type)
 
   const [profileEmp, setProfileEmp] = useState(null);
   const [selectedDemandType, setSelectedDemandType] = useState(null);

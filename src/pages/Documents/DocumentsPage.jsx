@@ -948,7 +948,7 @@ export default function DocumentsPage() {
     searchParams.get("tab") || "payroll",
   );
   const [profileEmp, setProfileEmp] = useState(null);
-  const hideQuickPanel = ["direction", "department"].includes(
+  const hideQuickPanel = ["direction"].includes(
     currentUser?.unit?.unit_type,
   );
 
