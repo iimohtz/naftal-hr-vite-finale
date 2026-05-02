@@ -866,7 +866,7 @@ function ApprovedByChefPanel({ onViewReq }) {
     useApp();
 
   const approvedByChef = requests.filter(r =>
-  r.status === 'approved'
+  r.status === "approved by project chef"
 )
 
   const getEmployeeName = (req) => {
