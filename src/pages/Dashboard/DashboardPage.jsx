@@ -316,20 +316,16 @@ function DemandsChart({ onSliceClick }) {
 
 /* ── Requests Panel ────────────────────────────────────────── */
 function RequestsPanel({ selectedType, onClearFilter }) {
-  const { requests, updateRequestStatus, employees, currentUser, addToast } = useApp();
+  const { requests, updateRequestStatus, employees, currentUser, addToast } =
+    useApp();
   const [showHistory, setShowHistory] = useState(false);
   const [selectedReq, setSelectedReq] = useState(null);
 
   // Determine which statuses are considered "pending" (actionable) for the current user
   const isPendingForUser = (status) => {
-    const lowerStatus = (status || "").toLowerCase();
-    if (currentUser?.unit_type === "direction") {
-      // Directors can approve requests that are pending or already approved by department chef
-      return lowerStatus === "pending" || lowerStatus === "approved by department chef";
-    }
-    // Department heads and regular employees only see raw pending requests
-    return lowerStatus === "pending";
-  };
+  const s = (status || '').toLowerCase()
+  return s === 'pending'
+}
 
   const getEmployeeName = (req) => {
     if (req.person_id) {
@@ -351,37 +347,48 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     // Check if digital signature keys are set up
     const keysReady = localStorage.getItem("keys_setup_done") === "true";
     if (!keysReady) {
-      addToast("Digital signature keys not set up. Please log out and log in again.", "error");
+      addToast(
+        "Digital signature keys not set up. Please log out and log in again.",
+        "error",
+      );
       return;
     }
 
     try {
-      const { signature, signed_data } = await signApproval(req.id, currentUser.id);
+      const { signature, signed_data } = await signApproval(
+        req.id,
+        currentUser.id,
+      );
       console.log("SIGNATURE PAYLOAD:", { signature, signed_data });
 
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Bearer ${token}`,
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            signature,
+            signed_data,
+          }),
         },
-        body: JSON.stringify({ 
-          signature, 
-          signed_data 
-        }),
-      });
+      );
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "The server rejected the signature.");
+        throw new Error(
+          errorData.message || "The server rejected the signature.",
+        );
       }
 
       updateRequestStatus(req.id, "APPROVED");
       addToast(`Request #${req.id} approved and signed.`);
     } catch (err) {
       addToast(`Approval failed: ${err.message}`, "error");
-      console.log(`Approval failed: ${err.message}`, "error")
+      console.log(`Approval failed: ${err.message}`, "error");
     }
   };
 
@@ -391,8 +398,8 @@ function RequestsPanel({ selectedType, onClearFilter }) {
   };
 
   // Filter requests based on current user's pending definition
-  let pendingList = requests.filter(r => isPendingForUser(r.status));
-  let historyList = requests.filter(r => !isPendingForUser(r.status));
+  let pendingList = requests.filter((r) => isPendingForUser(r.status));
+  let historyList = requests.filter((r) => !isPendingForUser(r.status));
 
   if (selectedType) {
     pendingList = pendingList.filter((r) => r.type === selectedType);
@@ -853,19 +860,162 @@ function GatePassesManager({ requests = [] }) {
     </div>
   );
 }
+/* ── Approved by Chef Panel (dept head sees these to final-approve) ── */
+function ApprovedByChefPanel({ onViewReq }) {
+  const { requests, updateRequestStatus, employees, currentUser, addToast } =
+    useApp();
 
+  const approvedByChef = requests.filter(r =>
+  r.status === 'approved'
+)
+
+  const getEmployeeName = (req) => {
+    if (req.person_id) {
+      const emp = employees.find((e) => String(e.id) === String(req.person_id));
+      if (emp) return emp.name;
+      return `ID: ${req.person_id}`;
+    }
+    return req.employee || "—";
+  };
+
+  const handleApprove = async (req) => {
+    try {
+      const { signature, signed_data } = await signApproval(
+        req.id,
+        currentUser.id,
+      );
+
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/requests/${req.id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ signature, signed_data })
+      })
+     if (!res.ok) throw new Error((await res.json()).message)
+
+      updateRequestStatus(req.id, "FINAL_APPROVED");
+      addToast(`Request #${req.id} final approved and signed.`);
+    } catch (err) {
+      addToast(`Approval failed: ${err.message}`, "error");
+    }
+  };
+
+  const handleReject = (req) => {
+    updateRequestStatus(req.id, "REJECTED");
+    addToast(`Request #${req.id} rejected.`, "warning");
+  };
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionTitle}>
+          APPROVED BY CHEF — AWAITING FINAL APPROVAL
+        </span>
+        <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+          {approvedByChef.length} pending
+        </span>
+      </div>
+
+      {approvedByChef.length === 0 ? (
+        <div className={styles.emptyRow}>
+          No requests awaiting final approval.
+        </div>
+      ) : (
+        <table className={styles.miniTable}>
+          <thead>
+            <tr>
+              {["ID", "EMPLOYEE", "TYPE", "DATE", "ACTIONS"].map((h) => (
+                <th key={h} className={styles.th}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {approvedByChef.map((req) => (
+              <tr key={req.id} className={styles.tr}>
+                <td className={`${styles.td} ${styles.tdMono}`}>{req.id}</td>
+                <td className={`${styles.td} ${styles.tdBold}`}>
+                  {getEmployeeName(req)}
+                </td>
+                <td className={styles.td}>{req.type || "—"}</td>
+                <td className={styles.td}>{req.submission_date || "—"}</td>
+                <td className={styles.td}>
+                  <div className={styles.actionBtns}>
+                    <button
+                      onClick={() => onViewReq(req)}
+                      title="View details"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--text-muted)",
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "2px 4px",
+                      }}
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 15 15"
+                        fill="none"
+                      >
+                        <ellipse
+                          cx="7.5"
+                          cy="7.5"
+                          rx="6.5"
+                          ry="4"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                        />
+                        <circle
+                          cx="7.5"
+                          cy="7.5"
+                          r="2"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      className={styles.approveBtn}
+                      onClick={() => handleApprove(req)}
+                    >
+                      APPROVE
+                    </button>
+                    <button
+                      className={styles.reviewBtn}
+                      onClick={() => handleReject(req)}
+                    >
+                      REJECT
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
 /* ── Main ──────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const { currentUser, setRequests, addToast } = useApp();
   const isAdmin = currentUser?.type === "admin";
-  const canApprove = ["direction", "department"].includes(
+  const canApprove = ["direction", "department", "projet"].includes(
     currentUser?.unit_type,
   );
-  const canRequest = !canApprove;
+  const canRequest = !["direction", "department"].includes(
+    currentUser?.unit_type,
+  );
+  const isDeptHead = currentUser?.unit_type === 'department'
 
   const [profileEmp, setProfileEmp] = useState(null);
   const [selectedDemandType, setSelectedDemandType] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
+  const [detailReq, setDetailReq] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -912,7 +1062,6 @@ export default function DashboardPage() {
           <DocHubQuick />
         </div>
         <div className={styles.col}>
-          {/* Only direction/department see gate passes and pending requests */}
           {canApprove && <GatePassesPanel />}
           {canApprove && (
             <RequestsPanel
@@ -921,7 +1070,9 @@ export default function DashboardPage() {
             />
           )}
 
-          {/* Regular employees → see their own submitted requests */}
+          {/* ← Department heads also see chef-approved requests ── */}
+          {isDeptHead && <ApprovedByChefPanel onViewReq={setDetailReq} />}
+
           {canRequest && <GatePassesManager requests={myRequests} />}
         </div>
       </div>
@@ -931,6 +1082,14 @@ export default function DashboardPage() {
           employee={profileEmp}
           onClose={() => setProfileEmp(null)}
           readOnly
+        />
+      )}
+
+      {/* Detail modal for chef-approved requests */}
+      {detailReq && (
+        <RequestDetailModal
+          request={detailReq}
+          onClose={() => setDetailReq(null)}
         />
       )}
     </div>
