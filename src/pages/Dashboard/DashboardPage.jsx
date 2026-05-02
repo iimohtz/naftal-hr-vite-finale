@@ -1018,40 +1018,44 @@ export default function DashboardPage() {
   const [detailReq, setDetailReq] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const token = localStorage.getItem('token')
+  if (!token) return
 
-    const fetchDashboardData = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        console.log("Dashboard raw response:", data);
+  const fetchDashboardData = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      console.log('Dashboard raw response:', data)
 
-        const list = data.requests || data.Requests || [];
+      const list = data.requests || data.Requests || []
+      const myId = String(currentUser?.id)
 
-        if (canApprove) {
-          // Directors/department heads → feed into the global requests context
-          // so RequestsPanel can show them with approve/reject
-          setRequests(list);
-        } else {
-          // Regular employees → show in MY REQUESTS panel
-          setMyRequests(list);
-        }
-      } catch (err) {
-        console.error("Dashboard Fetch Error:", err);
-        addToast("Could not sync with server. Showing local data.", "warning");
+      // My own requests → always go to MY REQUESTS panel
+      const mine   = list.filter(r => String(r.person_id) === myId)
+
+      // Others' requests → go to approval panels (if user can approve)
+      const others = list.filter(r => String(r.person_id) !== myId)
+
+      setMyRequests(mine)
+
+      if (canApprove) {
+        setRequests(others)
       }
-    };
 
-    fetchDashboardData();
-  }, []);
+    } catch (err) {
+      console.error('Dashboard Fetch Error:', err)
+      addToast('Could not sync with server. Showing local data.', 'warning')
+    }
+  }
 
+  fetchDashboardData()
+}, [])
   return (
     <div className={styles.page}>
       <KpiStrip />
