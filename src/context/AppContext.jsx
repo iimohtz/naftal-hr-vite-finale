@@ -558,18 +558,17 @@ export function AppProvider({ children }) {
   });
 
   const [employees, setEmployees] = useState(() => {
-    try {
-      const list = JSON.parse(localStorage.getItem("list") || "null");
-      if (list && list.length > 0) return mapList(list);
-      return SEED_EMPLOYEES;
-    } catch {
-      return SEED_EMPLOYEES;
-    }
-  });
-  const [requests, setRequests] = useState([]);
-  const [gatePasses, setGatePasses] = useState([]);
-  const [notifications, setNotifications] = useState(SEED_NOTIFICATIONS);
-  const [toasts, setToasts] = useState([]);
+  try {
+    const list = JSON.parse(localStorage.getItem('list') || 'null')
+    if (list && list.length > 0) return mapList(list)
+    return []
+  } catch { return [] }
+})
+
+const [requests,      setRequests]      = useState([])
+const [gatePasses,    setGatePasses]    = useState([])
+const [notifications, setNotifications] = useState([])
+const [toasts,        setToasts]        = useState([])
 
   /* ── Auth ── */
   const login = useCallback((personOrId, password) => {
@@ -582,12 +581,10 @@ export function AppProvider({ children }) {
 
       // ── Refresh employees from the new user's list ──
       try {
-        const list = JSON.parse(localStorage.getItem("list") || "null");
-        if (list && list.length > 0) setEmployees(mapList(list));
-        else setEmployees(SEED_EMPLOYEES);
-      } catch {
-        setEmployees(SEED_EMPLOYEES);
-      }
+  const list = JSON.parse(localStorage.getItem('list') || 'null')
+  if (list && list.length > 0) setEmployees(mapList(list))
+  else setEmployees([])
+} catch { setEmployees([]) }
 
       return true;
     }
