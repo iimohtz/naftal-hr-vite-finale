@@ -371,7 +371,7 @@ export default function EmployeesPage() {
         {/* Toolbar */}
         <div className={styles.toolbar}>
           <div className={styles.filters}>
-            <span className={styles.filterLabel}>DEPT:</span>
+            <span className={styles.filterLabel}>UNIT:</span>
             {DEPTS.map((d) => (
               <button
                 key={d}
@@ -381,7 +381,7 @@ export default function EmployeesPage() {
                   setPage(1);
                 }}
               >
-                {d === "ALL" ? "ALL DEPTS" : d}
+                {d === "ALL" ? "ALL UNITS" : d}
               </button>
             ))}
             <span className={styles.filterDivider}>|</span>

@@ -136,13 +136,6 @@ function PayrollTab({ onViewEmployee }) {
             {MONTHS_LIST.map(m => <option key={m}>{m}</option>)}
           </Select>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => addToast('Payroll report generated for ' + month)}
-        >
-          GENERATE REPORT
-        </Button>
       </div>
 
       <div className={styles.tableWrap}>
