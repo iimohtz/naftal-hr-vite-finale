@@ -24,7 +24,7 @@
 .viewBtn { width: 30px; height: 30px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--text-light); transition: background var(--t-fast), color var(--t-fast); }
 .viewBtn:hover { background: var(--bg-subtle); color: var(--text); }
 
-.docGrid { display: grid; grid-template-columns: repeat(4,1fr); }
+.docGrid { display: grid; grid-template-columns: repeat(2,1fr); }
 .docItem { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px 12px; border-right: 1px solid var(--border); color: var(--text-light); transition: background var(--t-fast), color var(--t-fast); }
 .docItem:last-child { border-right: none; }
 .docItem:hover { background: var(--bg); color: var(--orange); }

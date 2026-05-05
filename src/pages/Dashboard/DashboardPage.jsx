@@ -192,8 +192,6 @@ function DocHubQuick() {
   const navigate = useNavigate();
   const docs = [
     { icon: <DownloadIcon />, label: "PAYROLL", tab: "payroll" },
-    { icon: <PrintIcon />, label: "PASSES", tab: "passes" },
-    { icon: <LogIcon />, label: "LOGS", tab: "logs" },
     { icon: <ExportIcon />, label: "EXPORT", tab: "export" },
   ];
   return (

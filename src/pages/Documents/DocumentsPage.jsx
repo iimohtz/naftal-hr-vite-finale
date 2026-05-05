@@ -75,8 +75,6 @@ const ExportIcon2 = () => (
 
 const TABS = [
   { key: "payroll", label: "PAYROLL", icon: <PayrollIcon /> },
-  { key: "passes", label: "PASSES", icon: <PassIcon /> },
-  { key: "logs", label: "LOGS", icon: <LogIcon2 /> },
   { key: "export", label: "EXPORT", icon: <ExportIcon2 /> },
 ];
 
