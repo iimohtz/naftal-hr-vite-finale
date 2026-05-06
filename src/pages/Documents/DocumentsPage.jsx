@@ -748,7 +748,7 @@ function QuickActionPanel() {
       addToast("Start date is required.", "error");
       return;
     }
-    const isDateToRequired = !["Absence Authorization", "Exit Pass"].includes(
+    const isDateToRequired = !["Absence Authorization", "Exit Pass","Time Off Activity"].includes(
       type,
     );
     if (isDateToRequired && !dateTo) {

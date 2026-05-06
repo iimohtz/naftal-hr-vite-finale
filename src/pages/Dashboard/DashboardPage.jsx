@@ -1083,7 +1083,6 @@ export default function DashboardPage() {
           <DocHubQuick />
         </div>
         <div className={styles.col}>
-          {canApprove && <GatePassesPanel />}
           {canApprove && (
             <RequestsPanel
               selectedType={selectedDemandType}
