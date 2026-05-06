@@ -104,27 +104,33 @@ function PayrollTab({ onViewEmployee }) {
     return `${year}-${MONTHS[mon] || '01'}`
   }
 
-  const handlePrintSlip = async (emp) => {
-    const yearMonth = toYearMonth(month)
-    addToast(`Generating slip for ${emp.name} — ${yearMonth}…`)
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/resume/download?id=${emp.id}&month=${yearMonth}`,
-        { headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' } }
-      )
-      if (!response.ok) throw new Error('Failed to download')
-      const blob = await response.blob()
-      const url  = window.URL.createObjectURL(blob)
-      const a    = document.createElement('a')
-      a.href     = url
-      a.download = `slip_${emp.id}_${yearMonth}.pdf`
-      a.click()
-      window.URL.revokeObjectURL(url)
-      console.log(response)
-    } catch {
-      addToast(`Failed to generate slip for ${emp.name}.`, 'error')
+const handlePrintSlip = async (emp) => {
+  const yearMonth = toYearMonth(month)
+  addToast(`Generating slip for ${emp.name} — ${yearMonth}…`)
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/resume/download?id=${emp.id}&month=${yearMonth}`,
+      { headers: { Authorization: `Bearer ${token}`, Accept: 'application/pdf' } }
+    )
+    if (!response.ok) {
+      const text = await response.text()
+      console.error('Server error:', response.status, text)
+      throw new Error(`Server responded ${response.status}`)
     }
+    const blob = await response.blob()
+    const url  = window.URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `slip_${emp.id}_${yearMonth}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => window.URL.revokeObjectURL(url), 150)
+  } catch (err) {
+    console.error('Download error:', err)
+    addToast(`Failed to generate slip for ${emp.name}: ${err.message}`, 'error')
   }
+}
 
   return (
     <div className={styles.tabContent}>
