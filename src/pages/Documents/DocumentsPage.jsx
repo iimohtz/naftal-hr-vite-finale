@@ -482,48 +482,14 @@ function ExportTab() {
   };
 
   const exports = [
-    {
-      icon: "📊",
-      label: "Employee Directory",
-      fmt: "CSV",
-      desc: "Full personnel list with roles and current status",
-      onClick: () => addToast("Exporting Employee Directory as CSV…"),
-    },
+    
     {
       icon: "📋",
       label: "Attendance Report",
       fmt: "PDF",
       desc: "Monthly summary of all employee attendance records",
       onClick: handleAttendanceReport,
-    },
-    {
-      icon: "🚪",
-      label: "Gate Pass Log",
-      fmt: "XLSX",
-      desc: "All gate passes with timestamps and destinations",
-      onClick: () => addToast("Exporting Gate Pass Log as XLSX…"),
-    },
-    {
-      icon: "📝",
-      label: "Leave Requests History",
-      fmt: "PDF",
-      desc: "Pending and historical leave requests with decisions",
-      onClick: () => addToast("Exporting Leave Requests as PDF…"),
-    },
-    {
-      icon: "💰",
-      label: "Payroll Summary",
-      fmt: "XLSX",
-      desc: "This month's payroll overview with overtime breakdown",
-      onClick: () => addToast("Exporting Payroll Summary as XLSX…"),
-    },
-    {
-      icon: "🔒",
-      label: "Security Audit Log",
-      fmt: "PDF",
-      desc: "Session logs, access events, and protocol changes",
-      onClick: () => addToast("Exporting Security Audit Log as PDF…"),
-    },
+    }
   ];
 
   return (
