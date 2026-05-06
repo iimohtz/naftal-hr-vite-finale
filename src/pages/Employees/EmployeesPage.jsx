@@ -25,6 +25,7 @@ const DEPTS = [
 ];
 const PER_PAGE = 8;
 
+
 /* ── Employee Form Modal ───────────────────────────────────── */
 function EmployeeFormModal({ employee, onClose }) {
   const { addEmployee, updateEmployee } = useApp();
@@ -212,7 +213,8 @@ function EmployeeFormModal({ employee, onClose }) {
 
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function EmployeesPage() {
-  const { employees, addToast } = useApp();
+  const { employees, addToast , currentUser} = useApp();
+  const isDirection = currentUser?.unit_type === 'direction'
   const token = localStorage.getItem("token");
   const handlePrintSlip = async (emp) => {
     // Always send the current month in YYYY-MM format
@@ -295,6 +297,26 @@ export default function EmployeesPage() {
   const activeCount = employees.filter((e) => e.status === "ACTIVE").length;
   const onLeaveCount = employees.filter((e) => e.status === "ON LEAVE").length;
   const inactiveCount = employees.filter((e) => e.status === "INACTIVE").length;
+
+  const handleSetAdjoint = async (emp) => {
+  addToast(`Setting ${emp.name} as Adjoint…`)
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/persons/${emp.id}/set-adjoint`,  
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    if (!res.ok) throw new Error('Failed')
+    addToast(`${emp.name} set as Adjoint successfully.`)
+  } catch {
+    addToast(`Failed to set ${emp.name} as Adjoint.`, 'error')
+  }
+}
 
   return (
     <div className={styles.page}>
@@ -659,6 +681,20 @@ export default function EmployeesPage() {
                             />
                           </svg>
                         </button>
+                        {isDirection && (
+  <button
+    className={`${styles.actionBtn} ${styles.actionBtnAdjoint}`}
+    title="Set as Adjoint"
+    onClick={() => handleSetAdjoint(emp)}
+  >
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="6" cy="5" r="3" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M11 7l2 2 2-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M13 9V5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  </button>
+)}
                       </div>
                     </td>
                   </tr>

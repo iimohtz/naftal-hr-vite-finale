@@ -337,11 +337,6 @@
   border-color: var(--border);
 }
 
-.actionBtnPrint:hover {
-  color: var(--blue);
-  border-color: #93C5FD;
-  background: var(--blue-bg);
-}
 
 .emptyState {
   display: flex;
