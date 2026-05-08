@@ -391,9 +391,52 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     }
   };
 
-  const handleReject = (req) => {
-    updateRequestStatus(req.id, "REJECTED");
-    addToast(`Request #${req.id} rejected.`, "warning");
+  const handleReject = async (req) => {
+    const keysReady = localStorage.getItem("keys_setup_done") === "true";
+    if (!keysReady) {
+      addToast(
+        "Digital signature keys not set up. Please log out and log in again.",
+        "error",
+      );
+      return;
+    }
+
+    try {
+      const { signature, signed_data } = await signApproval(
+        req.id,
+        currentUser.id,
+      );
+      console.log("SIGNATURE PAYLOAD:", { signature, signed_data });
+
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/requests/${req.id}/reject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            signature,
+            signed_data,
+          }),
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "The server rejected the signature.",
+        );
+      }
+
+      updateRequestStatus(req.id, "REJECTED");
+      addToast(`Request #${req.id} rejected and signed.`);
+    } catch (err) {
+      addToast(`Reject failed: ${err.message}`, "error");
+      console.log(`Reject failed: ${err.message}`, "error");
+    }
   };
 
   // Filter requests based on current user's pending definition
