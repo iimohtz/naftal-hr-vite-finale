@@ -1089,11 +1089,13 @@ export default function DashboardPage() {
   const isAdmin = currentUser?.type === "admin";
   const isDirector =
     String(currentUser?.id) === String(currentUser?.unit?.director_id);
+  const isAdjoint =
+    String(currentUser?.id) === String(currentUser?.unit?.adjoint_id);
   const canApprove =
-    ["direction", "department", "projet"].includes(unitType) && isDirector;
+    ["direction", "department", "service", "projet"].includes(unitType) && (isDirector || isAdjoint);
   const canRequest = !["direction"].includes(unitType);
   const isDeptHead =
-    ["department", "direction"].includes(unitType) && isDirector;
+    ["department", "direction"].includes(unitType) && (isDirector || isAdjoint);
 
   const [profileEmp, setProfileEmp] = useState(null);
   const [selectedDemandType, setSelectedDemandType] = useState(null);
