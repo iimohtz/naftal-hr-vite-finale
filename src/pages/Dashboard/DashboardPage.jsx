@@ -316,7 +316,7 @@ function DemandsChart({ onSliceClick }) {
 function RequestsPanel({ selectedType, onClearFilter }) {
   const { requests, updateRequestStatus, employees, currentUser, addToast } =
     useApp();
-    const unitType = currentUser?.unit_type || '' 
+  const unitType = currentUser?.unit_type || "";
   const [showHistory, setShowHistory] = useState(false);
   const [selectedReq, setSelectedReq] = useState(null);
 
@@ -441,13 +441,15 @@ function RequestsPanel({ selectedType, onClearFilter }) {
 
   // Filter requests based on current user's pending definition
   let pendingList = requests.filter((r) => isPendingForUser(r.status));
-  let historyList = requests.filter(r => {
-    if (isPendingForUser(r.status)) return false
-    if (unitType === 'projet')     return true  
-    if (unitType === 'department') return r.status !== 'approved by project chef'
-    if (unitType === 'direction')  return r.status !== 'approved by department chef'
-    return true
-  })
+  let historyList = requests.filter((r) => {
+    if (isPendingForUser(r.status)) return false;
+    if (unitType === "projet") return true;
+    if (unitType === "department")
+      return r.status !== "approved by project chef";
+    if (unitType === "direction")
+      return r.status !== "approved by department chef";
+    return true;
+  });
 
   if (selectedType) {
     pendingList = pendingList.filter((r) => r.type === selectedType);
@@ -557,6 +559,24 @@ function RequestsPanel({ selectedType, onClearFilter }) {
                           REJECT
                         </button>
                       </>
+                    ) : req.status === "rejected" ? (
+                      // ← rejected requests can be re-approved
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 6,
+                          alignItems: "center",
+                        }}
+                      >
+                        <StatusBadge status="REJECTED" />
+                        <button
+                          className={styles.approveBtn}
+                          onClick={() => handleApprove(req)}
+                          title="Re-approve this request"
+                        >
+                          APPROVE
+                        </button>
+                      </div>
                     ) : (
                       <StatusBadge status={req.status.toUpperCase()} />
                     )}
@@ -912,13 +932,15 @@ function GatePassesManager({ requests = [] }) {
 function ApprovedByChefPanel({ onViewReq }) {
   const { requests, updateRequestStatus, employees, currentUser, addToast } =
     useApp();
-const unitType = currentUser?.unit_type || ''
+  const unitType = currentUser?.unit_type || "";
 
-const awaitingApproval = requests.filter(r => {
-    if (unitType === 'department') return r.status === 'approved by project chef'
-    if (unitType === 'direction')  return r.status === 'approved by department chef'
-    return false
-  })
+  const awaitingApproval = requests.filter((r) => {
+    if (unitType === "department")
+      return r.status === "approved by project chef";
+    if (unitType === "direction")
+      return r.status === "approved by department chef";
+    return false;
+  });
   const approvedByChef = requests.filter(
     (r) => r.status === "approved by project chef",
   );
