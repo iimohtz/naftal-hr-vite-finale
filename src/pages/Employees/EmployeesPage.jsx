@@ -213,7 +213,7 @@ function EmployeeFormModal({ employee, onClose }) {
 
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function EmployeesPage() {
-  const { employees, addToast , currentUser} = useApp();
+  const { employees, addToast , currentUser, refreshUserContext} = useApp();
   const isDirection = currentUser?.unit_type === 'direction'
   const token = localStorage.getItem("token");
   const handlePrintSlip = async (emp) => {
@@ -312,6 +312,18 @@ export default function EmployeesPage() {
       }
     )
     if (!res.ok) throw new Error('Failed')
+
+    // Directly update localStorage with the new adjoint from the persons list
+    try {
+      const list = JSON.parse(localStorage.getItem("list") || "[]");
+      const person = list.find(p => String(p.id) === String(emp.id));
+      if (person) {
+        localStorage.setItem("adjoint", JSON.stringify(person));
+      }
+    } catch (e) {
+      console.error("Failed to update adjoint in localStorage:", e);
+    }
+
     addToast(`${emp.name} set as Adjoint successfully.`)
   } catch {
     addToast(`Failed to set ${emp.name} as Adjoint.`, 'error')

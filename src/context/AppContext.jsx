@@ -574,6 +574,52 @@ export function AppProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
 
+  // ── Auto-refresh from /me on every page reload ──
+  const refreshUserContext = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/me`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.warn("NAFTAL /me failed with status:", response.status);
+        return;
+      }
+      const data = await response.json();
+      console.log("NAFTAL /me response:", data);
+
+      // Update localStorage
+      localStorage.setItem("user", JSON.stringify(data.person));
+      localStorage.setItem("unit", JSON.stringify(data.unit ?? null));
+      localStorage.setItem("adjoint", JSON.stringify(data.current_adjoint ?? null));
+      if (data.persons_list) {
+        localStorage.setItem("list", JSON.stringify(data.persons_list));
+        setEmployees(mapList(data.persons_list));
+      }
+      if (data.attendance_sessions) {
+        localStorage.setItem("attendance", JSON.stringify(data.attendance_sessions));
+      }
+
+      // Update React state
+      const normalized = normalizeUser(data.person, data.unit);
+      setCurrentUser(normalized);
+      console.log("NAFTAL: Context refreshed, adjoint =", data.current_adjoint);
+    } catch (err) {
+      console.error("NAFTAL /me auto-refresh failed:", err);
+    }
+  }, []);
+
+  // Call /me on mount (page load / reload) to get fresh data
+  useEffect(() => {
+    refreshUserContext();
+  }, [refreshUserContext]);
+
   /* ── Auth ── */
   const login = useCallback((personOrId, password) => {
     // Real API path
@@ -744,6 +790,7 @@ export function AppProvider({ children }) {
     theme,
     toggleTheme,
     currentUser,
+    refreshUserContext,
     login,
     logout,
     employees,
