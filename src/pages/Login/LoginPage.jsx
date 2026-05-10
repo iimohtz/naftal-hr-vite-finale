@@ -230,11 +230,11 @@ export default function LoginPage() {
         </form>
 
         <div className={styles.demoHint}>
-          <span className={styles.demoLabel}>DEMO ACCESS</span>
+          <span className={styles.demoLabel}></span>
           <div className={styles.demoAccounts}>
-            <button className={styles.demoBtn} onClick={() => fillDemo("admin")}>Admin Account</button>
+            <button className={styles.demoBtn} onClick={() => fillDemo("admin")}></button>
             <span className={styles.demoDot}>·</span>
-            <button className={styles.demoBtn} onClick={() => fillDemo("manager")}>Shift Manager</button>
+            <button className={styles.demoBtn} onClick={() => fillDemo("manager")}></button>
           </div>
         </div>
       </div>
