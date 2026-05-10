@@ -517,6 +517,7 @@ function mapList(list) {
 }
 
 export function AppProvider({ children }) {
+  
   // Theme state
   const [theme, setTheme] = useState(() => {
     try {
@@ -525,6 +526,7 @@ export function AppProvider({ children }) {
       return "light";
     }
   });
+
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -558,17 +560,19 @@ export function AppProvider({ children }) {
   });
 
   const [employees, setEmployees] = useState(() => {
-  try {
-    const list = JSON.parse(localStorage.getItem('list') || 'null')
-    if (list && list.length > 0) return mapList(list)
-    return []
-  } catch { return [] }
-})
+    try {
+      const list = JSON.parse(localStorage.getItem("list") || "null");
+      if (list && list.length > 0) return mapList(list);
+      return [];
+    } catch {
+      return [];
+    }
+  });
 
-const [requests,      setRequests]      = useState([])
-const [gatePasses,    setGatePasses]    = useState([])
-const [notifications, setNotifications] = useState([])
-const [toasts,        setToasts]        = useState([])
+  const [requests, setRequests] = useState([]);
+  const [gatePasses, setGatePasses] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [toasts, setToasts] = useState([]);
 
   /* ── Auth ── */
   const login = useCallback((personOrId, password) => {
@@ -581,10 +585,12 @@ const [toasts,        setToasts]        = useState([])
 
       // ── Refresh employees from the new user's list ──
       try {
-  const list = JSON.parse(localStorage.getItem('list') || 'null')
-  if (list && list.length > 0) setEmployees(mapList(list))
-  else setEmployees([])
-} catch { setEmployees([]) }
+        const list = JSON.parse(localStorage.getItem("list") || "null");
+        if (list && list.length > 0) setEmployees(mapList(list));
+        else setEmployees([]);
+      } catch {
+        setEmployees([]);
+      }
 
       return true;
     }
@@ -647,6 +653,7 @@ const [toasts,        setToasts]        = useState([])
     localStorage.removeItem("unit");
     localStorage.removeItem("token");
     localStorage.removeItem("list");
+    localStorage.removeItem("adjoint");
   }, []);
 
   /* ── Toast ── */

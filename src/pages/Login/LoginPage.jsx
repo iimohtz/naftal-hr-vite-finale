@@ -49,6 +49,7 @@ export default function LoginPage() {
       localStorage.setItem("unit", JSON.stringify(data.unit ?? null));
       localStorage.setItem("list", JSON.stringify(data.persons_list ?? []));
       localStorage.setItem("attendance", JSON.stringify(data.attendance_sessions ?? []));
+      localStorage.setItem("adjoint",  JSON.stringify(data.current_adjoint ?? null))
 
       login(data.person);
 

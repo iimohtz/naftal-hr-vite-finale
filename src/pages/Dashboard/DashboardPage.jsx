@@ -255,6 +255,45 @@ function GatePassesPanel() {
     </div>
   );
 }
+/* ── Adjoint Card ──────────────────────────────────────────── */
+function AdjointCard() {
+  const adjoint = (() => {
+    try { return JSON.parse(localStorage.getItem('adjoint') || 'null') }
+    catch { return null }
+  })()
+
+  if (!adjoint) return null
+
+  const fullName = `${adjoint.first_name ?? ''} ${adjoint.last_name ?? ''}`.trim()
+  const initial  = fullName.charAt(0).toUpperCase()
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionTitle}>CURRENT ADJOINT</span>
+        <span style={{ fontSize: '0.7rem', color: 'var(--green)', fontWeight: 700, letterSpacing: '0.06em' }}>
+          ACTIVE
+        </span>
+      </div>
+      <div className={styles.empRow}>
+        <div
+          style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'var(--orange)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 14, flexShrink: 0,
+          }}
+        >
+          {initial}
+        </div>
+        <div className={styles.empInfo}>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>{fullName}</span>
+          <span className={styles.empId}>{adjoint.position || '—'}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /* ── Demands Chart ─────────────────────────────────────────── */
 function DemandsChart({ onSliceClick }) {
@@ -1147,6 +1186,7 @@ export default function DashboardPage() {
         <div className={styles.col}>
           {isAdmin && <MyEmployees onViewEmployee={setProfileEmp} />}
           {canApprove && <DemandsChart onSliceClick={setSelectedDemandType} />}
+          {unitType === 'direction' && isDirector && <AdjointCard />}
           <DocHubQuick />
         </div>
         <div className={styles.col}>
