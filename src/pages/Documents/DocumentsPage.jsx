@@ -172,7 +172,7 @@ function PayrollTab({ onViewEmployee }) {
               {[
                 "EMPLOYEE ID",
                 "NAME",
-                "DEPARTMENT",
+                "UNIT",
                 "PRESENT",
                 "OVERTIME",
                 "EFFICIENCY",

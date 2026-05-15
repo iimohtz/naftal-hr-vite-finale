@@ -494,7 +494,7 @@ export default function EmployeesPage() {
                 {[
                   "ID CODE",
                   "EMPLOYEE",
-                  "DEPARTMENT",
+                  "UNIT",
                   "ROLE",
                   "SHIFT",
                   "STATUS",
