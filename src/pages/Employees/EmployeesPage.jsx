@@ -340,23 +340,6 @@ export default function EmployeesPage() {
             Real-time personnel management and operational status.
           </p>
         </div>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => setAddOpen(true)}
-          icon={
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path
-                d="M7 1v12M1 7h12"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          }
-        >
-          ADD EMPLOYEE
-        </Button>
       </div>
 
       {/* KPI bar */}
