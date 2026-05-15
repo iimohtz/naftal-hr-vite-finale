@@ -127,10 +127,11 @@ export default function Sidebar() {
   // currentUser.type is set to 'admin' by normalizeUser() in AppContext
   // whenever the numeric id is in ADMIN_IDS or the user is a unit director
   const isAdmin = currentUser?.type === "admin";
+  const isDirector = String(currentUser?.id) === String(currentUser?.unit?.director_id);
 
-  const canAccessSettings = ["direction", "department"].includes(
-    currentUser?.unit_type,
-  );
+  const canAccessSettings = 
+    ["direction", "department"].includes(currentUser?.unit_type) && 
+    isDirector;
 
   // ── Display name: prefer the normalized full name ──────────────
   // normalizeUser() sets .name = first_name + ' ' + last_name
