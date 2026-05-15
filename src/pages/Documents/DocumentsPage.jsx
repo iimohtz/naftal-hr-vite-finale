@@ -555,7 +555,7 @@ function ExportTab() {
       icon: "📋",
       label: "Attendance Report",
       fmt: "PDF",
-      desc: "Monthly summary of all employee attendance records",
+      desc: "summary of My attendance records",
       onClick: handleAttendanceReport,
     },
   ];
@@ -1037,8 +1037,11 @@ export default function DocumentsPage() {
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "payroll",
   );
+  const isAdjoint = String(currentUser?.id) === String(currentUser?.unit?.adjoint_id);
   const [profileEmp, setProfileEmp] = useState(null);
-  const hideQuickPanel = ["direction"].includes(currentUser?.unit?.unit_type);
+  const isDirectionUnit = currentUser?.unit?.unit_type === "direction";
+  const isDirector = String(currentUser?.id) === String(currentUser?.unit?.director_id);
+  const hideQuickPanel = isDirectionUnit && isDirector && !isAdjoint;
 
   return (
     <div className={styles.page}>
@@ -1069,7 +1072,7 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {!hideQuickPanel && <QuickActionPanel />}
+      {!hideQuickPanel && <QuickActionPanel  />}
 
       {/* Floating profile drawer — read-only from Documents (no edit/delete) */}
       {profileEmp && (
