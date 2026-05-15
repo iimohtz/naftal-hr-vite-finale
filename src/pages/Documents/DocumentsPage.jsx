@@ -525,11 +525,36 @@ function ExportTab() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const token = localStorage.getItem("token");
 
+  // 1. Generate last 6 months dynamically (same as Payroll)
+  const MONTHS_LIST = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    return d
+      .toLocaleDateString("en-GB", { month: "short", year: "numeric" })
+      .toUpperCase();
+  });
+
+  // 2. Initialize state with the current month
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS_LIST[0]);
+
+  // 3. Helper to parse format (Same as Payroll)
+  const toYearMonth = (monthStr) => {
+    const MONTHS = {
+      JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06",
+      JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12",
+    };
+    const [mon, year] = monthStr.split(" ");
+    return `${year}-${MONTHS[mon] || "01"}`;
+  };
+
   const handleAttendanceReport = async () => {
-    addToast("Generating Attendance Report…");
+    const yearMonth = toYearMonth(selectedMonth);
+    addToast(`Generating Attendance Report for ${selectedMonth}…`);
+    
     try {
+      // 4. Added &month parameter to the URL
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/resume/download?id=${user.id}`,
+        `${import.meta.env.VITE_API_URL}/resume/download?id=${user.id}&month=${yearMonth}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -537,12 +562,15 @@ function ExportTab() {
           },
         },
       );
+      
       if (!response.ok) throw new Error("Failed to download");
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "PresenceResume.pdf";
+      // 5. Updated filename to include the month
+      a.download = `Attendance_Report_${yearMonth}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
@@ -555,7 +583,7 @@ function ExportTab() {
       icon: "📋",
       label: "Attendance Report",
       fmt: "PDF",
-      desc: "summary of My attendance records",
+      desc: `Summary of my attendance records for ${selectedMonth}`,
       onClick: handleAttendanceReport,
     },
   ];
@@ -566,8 +594,20 @@ function ExportTab() {
         <div className={styles.tabLeft}>
           <div className={styles.accentBar} />
           <span className={styles.tabCardTitle}>EXPORT CENTER</span>
+          
+          {/* 6. Added the Selection dropdown to the toolbar */}
+          <Select 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            style={{ marginLeft: '15px' }}
+          >
+            {MONTHS_LIST.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </Select>
         </div>
       </div>
+      
       <div className={styles.exportGrid}>
         {exports.map((ex, i) => (
           <div key={i} className={styles.exportItem}>
