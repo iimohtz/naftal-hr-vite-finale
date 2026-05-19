@@ -771,6 +771,7 @@ function QuickActionPanel() {
   const [reasonType, setReasonType] = useState("");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
+  const [transportMethod, setTransportMethod] = useState('')
 
   const REASON_OPTIONS = {
     Vacation: [
@@ -793,6 +794,7 @@ function QuickActionPanel() {
     setTimeTo("");
     setDestination("");
     setNote("");
+    setTransportMethod('')
   };
 
   // ── Validation & send ─────────────────────────────────────
@@ -860,6 +862,7 @@ function QuickActionPanel() {
       time_to: timeTo || null,
       destination: destination || null,
       note: note || null,
+      transport_method:  type === 'Time Off Activity' ? transportMethod || null : null,
       status: "PENDING",
     };
 
@@ -919,6 +922,7 @@ function QuickActionPanel() {
     setReasonType("");
     setNote("");
     setSending(false);
+    setTransportMethod('')
   };
 
   return (
@@ -1035,6 +1039,14 @@ function QuickActionPanel() {
               setReasonType={setReasonType}
               reasonOptions={REASON_OPTIONS[type]}
             />
+             <FormField label="Transport Method">
+      <Input
+        type="text"
+        value={transportMethod}
+        onChange={e => setTransportMethod(e.target.value)}
+        placeholder="e.g. Company vehicle, Personal car, Train…"
+      />
+    </FormField>
             <NoteField note={note} setNote={setNote} />
           </>
         )}
