@@ -820,7 +820,7 @@ function QuickActionPanel() {
         return;
       }
     }
-    if (["Exit Pass", "Absence Authorization"].includes(type) && !timeFrom) {
+    if (["Exit Pass"].includes(type) && !timeFrom) {
       addToast(`Time is required for ${type}.`, "error");
       return;
     }
