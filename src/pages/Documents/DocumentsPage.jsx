@@ -821,10 +821,7 @@ function QuickActionPanel() {
     }
     const isTimeRequired = ["Time Off Activity"].includes(type);
     if (isTimeRequired) {
-      if (!timeFrom || !timeTo) {
-        addToast(`Start and end times are required for ${type}.`, "error");
-        return;
-      }
+      
       const sameDay = !dateFrom || !dateTo || dateFrom === dateTo;
       if (sameDay && timeTo <= timeFrom) {
         addToast(
