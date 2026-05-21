@@ -908,6 +908,7 @@ function QuickActionPanel() {
         const err = await response.json();
         throw new Error(err.message || "Server error");
       }
+      console.log(response.headers)
       addToast(`${type} submitted successfully.`);
     } catch (err) {
       addToast(`Submitted locally. Sync failed: ${err.message}`, "warning");
@@ -1018,10 +1019,11 @@ function QuickActionPanel() {
         {/* ── Time Off Activity ── */}
         {type === "Time Off Activity" && (
           <>
-            <DateField
-              label="Date"
+            <DateRangeField
               dateFrom={dateFrom}
               setDateFrom={setDateFrom}
+              dateTo={dateTo}
+              setDateTo={setDateTo}
             />
             <TimeRangeField
               timeFrom={timeFrom}
