@@ -540,8 +540,18 @@ function ExportTab() {
   // 3. Helper to parse format (Same as Payroll)
   const toYearMonth = (monthStr) => {
     const MONTHS = {
-      JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06",
-      JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12",
+      JAN: "01",
+      FEB: "02",
+      MAR: "03",
+      APR: "04",
+      MAY: "05",
+      JUN: "06",
+      JUL: "07",
+      AUG: "08",
+      SEP: "09",
+      OCT: "10",
+      NOV: "11",
+      DEC: "12",
     };
     const [mon, year] = monthStr.split(" ");
     return `${year}-${MONTHS[mon] || "01"}`;
@@ -550,7 +560,7 @@ function ExportTab() {
   const handleAttendanceReport = async () => {
     const yearMonth = toYearMonth(selectedMonth);
     addToast(`Generating Attendance Report for ${selectedMonth}…`);
-    
+
     try {
       // 4. Added &month parameter to the URL
       const response = await fetch(
@@ -562,9 +572,9 @@ function ExportTab() {
           },
         },
       );
-      
+
       if (!response.ok) throw new Error("Failed to download");
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -594,12 +604,12 @@ function ExportTab() {
         <div className={styles.tabLeft}>
           <div className={styles.accentBar} />
           <span className={styles.tabCardTitle}>EXPORT CENTER</span>
-          
+
           {/* 6. Added the Selection dropdown to the toolbar */}
-          <Select 
-            value={selectedMonth} 
+          <Select
+            value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{ marginLeft: '15px' }}
+            style={{ marginLeft: "15px" }}
           >
             {MONTHS_LIST.map((m) => (
               <option key={m}>{m}</option>
@@ -607,7 +617,7 @@ function ExportTab() {
           </Select>
         </div>
       </div>
-      
+
       <div className={styles.exportGrid}>
         {exports.map((ex, i) => (
           <div key={i} className={styles.exportItem}>
@@ -771,7 +781,7 @@ function QuickActionPanel() {
   const [reasonType, setReasonType] = useState("");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
-  const [transportMethod, setTransportMethod] = useState('')
+  const [transportMethod, setTransportMethod] = useState("");
 
   const REASON_OPTIONS = {
     Vacation: [
@@ -794,7 +804,7 @@ function QuickActionPanel() {
     setTimeTo("");
     setDestination("");
     setNote("");
-    setTransportMethod('')
+    setTransportMethod("");
   };
 
   // ── Validation & send ─────────────────────────────────────
@@ -815,11 +825,16 @@ function QuickActionPanel() {
         addToast(`Start and end times are required for ${type}.`, "error");
         return;
       }
-      if (timeTo <= timeFrom) {
-        addToast("End time must be later than start time.", "error");
+      const sameDay = !dateFrom || !dateTo || dateFrom === dateTo;
+      if (sameDay && timeTo <= timeFrom) {
+        addToast(
+          "End time must be later than start time on the same day.",
+          "error",
+        );
         return;
       }
     }
+
     if (["Exit Pass"].includes(type) && !timeFrom) {
       addToast(`Time is required for ${type}.`, "error");
       return;
@@ -829,11 +844,9 @@ function QuickActionPanel() {
       addToast("Start date is required.", "error");
       return;
     }
-    const isDateToRequired = ![
-      "Absence Authorization",
-      "Exit Pass",
-      "Time Off Activity",
-    ].includes(type);
+    const isDateToRequired = !["Absence Authorization", "Exit Pass"].includes(
+      type,
+    );
     if (isDateToRequired && !dateTo) {
       addToast("End date is required.", "error");
       return;
@@ -862,7 +875,8 @@ function QuickActionPanel() {
       time_to: timeTo || null,
       destination: destination || null,
       note: note || null,
-      transport_method:  type === 'Time Off Activity' ? transportMethod || null : null,
+      transport_method:
+        type === "Time Off Activity" ? transportMethod || null : null,
       status: "PENDING",
     };
 
@@ -908,7 +922,7 @@ function QuickActionPanel() {
         const err = await response.json();
         throw new Error(err.message || "Server error");
       }
-      console.log(response.headers)
+      console.log(response.headers);
       addToast(`${type} submitted successfully.`);
     } catch (err) {
       addToast(`Submitted locally. Sync failed: ${err.message}`, "warning");
@@ -923,7 +937,7 @@ function QuickActionPanel() {
     setReasonType("");
     setNote("");
     setSending(false);
-    setTransportMethod('')
+    setTransportMethod("");
   };
 
   return (
@@ -1018,30 +1032,43 @@ function QuickActionPanel() {
 
         {/* ── Time Off Activity ── */}
         {type === "Time Off Activity" && (
-          <>
-            <DateRangeField
-              dateFrom={dateFrom}
-              setDateFrom={setDateFrom}
-              dateTo={dateTo}
-              setDateTo={setDateTo}
-            />
-            <TimeRangeField
-              timeFrom={timeFrom}
-              setTimeFrom={setTimeFrom}
-              timeTo={timeTo}
-              setTimeTo={setTimeTo}
-            />
-            <DestinationField
-              destination={destination}
-              setDestination={setDestination}
-            />
-            <TypeRadioField
-              type={type}
-              reasonType={reasonType}
-              setReasonType={setReasonType}
-              reasonOptions={REASON_OPTIONS[type]}
-            />
-             <FormField label="Transport Method">
+  <>
+    <DateRangeField
+      dateFrom={dateFrom}
+      setDateFrom={setDateFrom}
+      dateTo={dateTo}
+      setDateTo={setDateTo}
+    />
+    {/* Custom time range — no error when dates differ */}
+    <FormField label="Time">
+      <div className={styles.dateRow}>
+        <Input
+          type="time"
+          value={timeFrom}
+          onChange={e => setTimeFrom(e.target.value)}
+        />
+        <Input
+          type="time"
+          value={timeTo}
+          onChange={e => setTimeTo(e.target.value)}
+          style={
+            timeFrom && timeTo && timeTo <= timeFrom &&
+            (!dateFrom || !dateTo || dateFrom === dateTo)
+              ? { borderColor: 'var(--red)' }
+              : {}
+          }
+        />
+      </div>
+      {timeFrom && timeTo && timeTo <= timeFrom &&
+       (!dateFrom || !dateTo || dateFrom === dateTo) && (
+        <span style={{ color: 'var(--red)', fontSize: '0.72rem', marginTop: 4, display: 'block' }}>
+          End time must be after start time on the same day
+        </span>
+      )}
+    </FormField>
+    <DestinationField destination={destination} setDestination={setDestination} />
+    <TypeRadioField type={type} reasonType={reasonType} setReasonType={setReasonType} reasonOptions={REASON_OPTIONS[type]} />
+    <FormField label="Transport Method">
       <Input
         type="text"
         value={transportMethod}
@@ -1049,8 +1076,9 @@ function QuickActionPanel() {
         placeholder="e.g. Company vehicle, Personal car, Train…"
       />
     </FormField>
-            <NoteField note={note} setNote={setNote} />
-          </>
+    <NoteField note={note} setNote={setNote} />
+  </>
+
         )}
       </div>
 
@@ -1091,10 +1119,12 @@ export default function DocumentsPage() {
   const [activeTab, setActiveTab] = useState(
     searchParams.get("tab") || "payroll",
   );
-  const isAdjoint = String(currentUser?.id) === String(currentUser?.unit?.adjoint_id);
+  const isAdjoint =
+    String(currentUser?.id) === String(currentUser?.unit?.adjoint_id);
   const [profileEmp, setProfileEmp] = useState(null);
   const isDirectionUnit = currentUser?.unit?.unit_type === "direction";
-  const isDirector = String(currentUser?.id) === String(currentUser?.unit?.director_id);
+  const isDirector =
+    String(currentUser?.id) === String(currentUser?.unit?.director_id);
   const hideQuickPanel = isDirectionUnit && isDirector && !isAdjoint;
 
   return (
@@ -1126,7 +1156,7 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {!hideQuickPanel && <QuickActionPanel  />}
+      {!hideQuickPanel && <QuickActionPanel />}
 
       {/* Floating profile drawer — read-only from Documents (no edit/delete) */}
       {profileEmp && (
