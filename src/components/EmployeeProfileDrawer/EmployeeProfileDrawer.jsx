@@ -63,8 +63,6 @@ export default function EmployeeProfileDrawer({ employee, onClose, onEdit, readO
     { icon: <PhoneIcon />,    label: 'Phone',         val: employee.phone    },
     { icon: <LocationIcon />, label: 'Location',      val: employee.location },
     { icon: <DeptIcon />,     label: 'Department',    val: employee.dept     },
-    { icon: <ShiftIcon />,    label: 'Shift',         val: employee.shift    },
-    { icon: <CalIcon />,      label: 'Join Date',     val: employee.joinDate },
   ]
 
   return (
@@ -190,19 +188,6 @@ export default function EmployeeProfileDrawer({ employee, onClose, onEdit, readO
           )}
 
         </div>
-
-        {/* ── Footer actions ── */}
-        {!readOnly && (
-          <div className={styles.drawerFooter}>
-            <button className={styles.deleteBtn} onClick={handleDelete}>
-              <DeleteIcon /> DELETE RECORD
-            </button>
-            <div style={{ flex: 1 }} />
-            <button className={styles.editBtn} onClick={() => { onClose(); onEdit(employee) }}>
-              <EditIcon /> EDIT RECORD
-            </button>
-          </div>
-        )}
 
       </div>
     </div>

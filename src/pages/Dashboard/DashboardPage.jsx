@@ -77,13 +77,39 @@ const ExportIcon = () => (
 );
 
 /* ── KPI Strip ─────────────────────────────────────────────── */
+function normalizeRequestStatus(status) {
+  return (status || "").toLowerCase().trim();
+}
+
+function formatKpiCount(count) {
+  return count < 10 ? `0${count}` : String(count);
+}
+
+const AWAITING_FINAL_APPROVAL_STATUSES = new Set([
+  "approved by project chef",
+  "approved by department chef",
+]);
+
+function isPendingKpiStatus(status) {
+  const normalized = normalizeRequestStatus(status);
+  return (
+    normalized === "pending" ||
+    AWAITING_FINAL_APPROVAL_STATUSES.has(normalized)
+  );
+}
+
 function KpiStrip() {
-  const { employees, requests, gatePasses } = useApp();
+  const { employees, requests, currentUser } = useApp();
+  const myId = String(currentUser?.id ?? "");
   const total = employees.length;
-  const active = employees.filter((e) => e.status === "ACTIVE").length;
   const attRate = computeTeamAttendanceRate(employees);
-  const pendGP = gatePasses.filter((g) => g.status === "PENDING").length;
-  const pendReq = requests.filter((r) => r.status === "PENDING").length;
+  const pendingCount = requests.filter(
+    (r) =>
+      String(r.person_id) !== myId && isPendingKpiStatus(r.status),
+  ).length;
+  const myRequestsCount = requests.filter(
+    (r) => String(r.person_id) === myId,
+  ).length;
   return (
     <div className={styles.kpiStrip}>
       {[
@@ -100,14 +126,14 @@ function KpiStrip() {
           border: "var(--green)",
         },
         {
-          label: "PENDING PASSES",
-          value: pendGP,
+          label: "PENDING REQUESTS",
+          value: formatKpiCount(pendingCount),
           accent: "var(--text)",
           border: "#64748B",
         },
         {
-          label: "LEAVE REQUESTS",
-          value: pendReq < 10 ? `0${pendReq}` : pendReq,
+          label: "My requests",
+          value: formatKpiCount(myRequestsCount),
           accent: "var(--red)",
           border: "var(--red)",
         },
@@ -301,9 +327,13 @@ function AdjointCard() {
 
 /* ── Demands Chart ─────────────────────────────────────────── */
 function DemandsChart({ onSliceClick }) {
-  const { requests } = useApp();
+  const { requests, currentUser } = useApp();
+  const myId = String(currentUser?.id ?? "");
+  const approvalRequests = requests.filter(
+    (r) => String(r.person_id) !== myId,
+  );
   // Aggregate data by type
-  const dataMap = requests.reduce((acc, req) => {
+  const dataMap = approvalRequests.reduce((acc, req) => {
     acc[req.type] = (acc[req.type] || 0) + 1;
     return acc;
   }, {});
@@ -362,12 +392,13 @@ function RequestsPanel({ selectedType, onClearFilter }) {
   const unitType = currentUser?.unit_type || "";
   const [showHistory, setShowHistory] = useState(false);
   const [selectedReq, setSelectedReq] = useState(null);
+  const myId = String(currentUser?.id ?? "");
+  const approvalRequests = requests.filter(
+    (r) => String(r.person_id) !== myId,
+  );
 
   // Determine which statuses are considered "pending" (actionable) for the current user
-  const isPendingForUser = (status) => {
-    const s = (status || "").toLowerCase();
-    return s === "pending";
-  };
+  const isPendingForUser = (status) => normalizeRequestStatus(status) === "pending";
 
   const getEmployeeName = (req) => {
     if (req.person_id) {
@@ -483,8 +514,8 @@ function RequestsPanel({ selectedType, onClearFilter }) {
   };
 
   // Filter requests based on current user's pending definition
-  let pendingList = requests.filter((r) => isPendingForUser(r.status));
-  let historyList = requests.filter((r) => {
+  let pendingList = approvalRequests.filter((r) => isPendingForUser(r.status));
+  let historyList = approvalRequests.filter((r) => {
     if (isPendingForUser(r.status)) return false;
     if (unitType === "projet") return true;
     if (unitType === "department")
@@ -602,7 +633,7 @@ function RequestsPanel({ selectedType, onClearFilter }) {
                           REJECT
                         </button>
                       </>
-                    ) : req.status === "rejected" ? (
+                    ) : normalizeRequestStatus(req.status) === "rejected" ? (
                       // ← rejected requests can be re-approved
                       <div
                         style={{
@@ -1167,14 +1198,8 @@ export default function DashboardPage() {
         // My own requests → always go to MY REQUESTS panel
         const mine = list.filter((r) => String(r.person_id) === myId);
 
-        // Others' requests → go to approval panels (if user can approve)
-        const others = list.filter((r) => String(r.person_id) !== myId);
-
         setMyRequests(mine);
-
-        if (canApprove) {
-          setRequests(others);
-        }
+        setRequests(list);
       } catch (err) {
         console.error("Dashboard Fetch Error:", err);
         addToast("Could not sync with server. Showing local data.", "warning");
@@ -1189,9 +1214,8 @@ export default function DashboardPage() {
       <div className={styles.grid}>
         <div className={styles.col}>
           {isAdmin && <MyEmployees onViewEmployee={setProfileEmp} />}
+          <AdjointCard />
           {canApprove && <DemandsChart onSliceClick={setSelectedDemandType} />}
-          {unitType === ('direction'&& isDirector)||'admin' && <AdjointCard />}
-          <DocHubQuick />
         </div>
         <div className={styles.col}>
           {canApprove && (
@@ -1204,6 +1228,7 @@ export default function DashboardPage() {
           {/* ← Department heads also see chef-approved requests ── */}
           {isDeptHead && <ApprovedByChefPanel onViewReq={setDetailReq} />}
           {canRequest && <GatePassesManager requests={myRequests} />}
+          <DocHubQuick />
         </div>
       </div>
 

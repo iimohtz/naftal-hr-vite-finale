@@ -199,7 +199,8 @@ function EmployeeFormModal({ employee, onClose }) {
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function EmployeesPage() {
   const { employees, addToast , currentUser, refreshUserContext} = useApp();
-  const isDirection = currentUser?.unit_type === 'direction'||'admin'
+  const isDirector  = String(currentUser?.id) === String(currentUser?.unit?.director_id)
+const isDirection = (currentUser?.unit_type === 'direction' && isDirector) || currentUser?.unit_type === 'admin'
   const token = localStorage.getItem("token");
   const handlePrintSlip = async (emp) => {
     // Always send the current month in YYYY-MM format
@@ -612,25 +613,6 @@ export default function EmployeesPage() {
                               r="2"
                               stroke="currentColor"
                               strokeWidth="1.4"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          className={styles.actionBtn}
-                          title="Edit record"
-                          onClick={() => setEditEmp(emp)}
-                        >
-                          <svg
-                            width="15"
-                            height="15"
-                            viewBox="0 0 15 15"
-                            fill="none"
-                          >
-                            <path
-                              d="M10.5 1.5l3 3L5 13H2v-3L10.5 1.5z"
-                              stroke="currentColor"
-                              strokeWidth="1.4"
-                              strokeLinejoin="round"
                             />
                           </svg>
                         </button>
