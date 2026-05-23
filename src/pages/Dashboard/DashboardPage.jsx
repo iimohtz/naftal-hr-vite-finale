@@ -1186,7 +1186,7 @@ export default function DashboardPage() {
         <div className={styles.col}>
           {isAdmin && <MyEmployees onViewEmployee={setProfileEmp} />}
           {canApprove && <DemandsChart onSliceClick={setSelectedDemandType} />}
-          {unitType === ('direction'||'admin') && isDirector && <AdjointCard />}
+          {unitType === ('direction'&& isDirector)||'admin' && <AdjointCard />}
           <DocHubQuick />
         </div>
         <div className={styles.col}>
