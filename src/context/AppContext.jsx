@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
 } from "react";
+import { computeMonthlyAttendance } from "../utils/attendance";
 
 /* ─────────────────────────────────────────────────────────────
    ADMIN ACCESS LIST
@@ -496,24 +497,29 @@ const SEED_NOTIFICATIONS = [
 const AppContext = createContext(null);
 
 function mapList(list) {
-  return list.map((p) => ({
-    id: String(p.id),
-    name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
-    dept: p.unit_name || "N/A",
-    role: p.position || "N/A",
-    email: p.email || "",
-    phone: p.phone_ip || "",
-    status: p.is_active ? "ACTIVE" : "INACTIVE",
-    joinDate: p.contract_start_date?.slice(0, 10) || "",
-    location: p.unit_name || "—",
-    shift: "—",
-    overtime: 0,
-    present: 0,
-    total: 22,
-    efficiency: 0,
-    unit_type: p.unit_type || "",
-    director_id: p.director_id || null,
-  }));
+  return list.map((p) => {
+    const sessions = p.attendance_sessions ?? [];
+    const { present, total, efficiency } = computeMonthlyAttendance(sessions);
+    return {
+      id: String(p.id),
+      name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
+      dept: p.unit_name || "N/A",
+      role: p.position || "N/A",
+      email: p.email || "",
+      phone: p.phone_ip || "",
+      status: p.is_active ? "ACTIVE" : "INACTIVE",
+      joinDate: p.contract_start_date?.slice(0, 10) || "",
+      location: p.unit_name || "—",
+      shift: "—",
+      overtime: 0,
+      present,
+      total,
+      efficiency,
+      attendanceSessions: sessions,
+      unit_type: p.unit_type || "",
+      director_id: p.director_id || null,
+    };
+  });
 }
 
 export function AppProvider({ children }) {

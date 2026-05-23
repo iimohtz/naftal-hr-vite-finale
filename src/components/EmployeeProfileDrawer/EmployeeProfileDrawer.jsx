@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import { StatusBadge, Avatar } from '../UI/UI'
 import styles from './EmployeeProfileDrawer.module.css'
+import { getAttendanceRatePercent } from '../../utils/attendance'
 
 /* ── Mini icons ─────────────────────────────────────────────── */
 const IDIcon       = () => <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M4.5 7h5M4.5 9.5h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
@@ -41,9 +42,7 @@ export default function EmployeeProfileDrawer({ employee, onClose, onEdit, readO
 
   if (!employee) return null
 
-  const attPct = employee.total > 0
-    ? Math.round((employee.present / employee.total) * 100)
-    : 0
+  const attPct = getAttendanceRatePercent(employee.present, employee.total)
 
   const effColor =
     employee.efficiency >= 90 ? 'var(--green)' :

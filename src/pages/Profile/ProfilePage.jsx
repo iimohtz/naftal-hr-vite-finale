@@ -9,6 +9,10 @@ import {
   Input,
 } from "../../components/UI/UI";
 import styles from "./ProfilePage.module.css";
+import {
+  computeMonthlyAttendance,
+  computePunctuality,
+} from "../../utils/attendance";
 
 /* ─────────────────────────────────────────────────────────────
    ADMIN ACCESS LIST
@@ -185,18 +189,15 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [pwdOpen,  setPwdOpen]  = useState(false);
 
-  const sessions = getAttendanceSessions()
+  const sessions = getAttendanceSessions();
+  const monthStats = computeMonthlyAttendance(sessions);
 
   // Sort descending, take 5 most recent for the weekly view
   const recentSessions = [...sessions]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5)
+    .slice(0, 5);
 
-  // Compute real stats from all sessions
-  const totalSessions  = sessions.length
-  const lateSessions   = sessions.filter(s => s.late_duration && s.late_duration !== '00:00').length
-  const onTimeSessions = totalSessions - lateSessions
-  const efficiency     = totalSessions > 0 ? Math.round((onTimeSessions / totalSessions) * 100) : 0
+  const { totalSessions, lateSessions } = computePunctuality(sessions);
 
   // Date range label from sessions
   const sortedDates   = [...sessions].sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -274,30 +275,30 @@ export default function ProfilePage() {
           <div className={styles.attCard}>
             <div className={styles.attHeader}>
               <span className={styles.attTitle}>PERSONAL ATTENDANCE</span>
-              <span className={styles.attBadge}>{totalSessions} SESSIONS</span>
+              <span className={styles.attBadge}>
+                {monthStats.present}/{monthStats.total} THIS MONTH
+              </span>
             </div>
             <div className={styles.attStats}>
               <div className={styles.attStat}>
-                <span className={styles.attStatLabel}>ON TIME</span>
-                <span className={styles.attStatVal}>{onTimeSessions}/{totalSessions}</span>
+                <span className={styles.attStatLabel}>PRESENT</span>
+                <span className={styles.attStatVal}>{monthStats.present}/{monthStats.total}</span>
               </div>
               <div className={styles.attStat}>
-                <span className={styles.attStatLabel}>LATE</span>
-                <span className={styles.attStatVal} style={{ color: 'var(--red)' }}>
-                  {lateSessions}x
-                </span>
+                <span className={styles.attStatLabel}>SESSIONS</span>
+                <span className={styles.attStatVal}>{totalSessions}</span>
               </div>
             </div>
             <div className={styles.effRow}>
-              <span className={styles.attStatLabel}>PUNCTUALITY INDEX</span>
-              <span className={styles.effVal}>{efficiency}%</span>
+              <span className={styles.attStatLabel}>ATTENDANCE RATE</span>
+              <span className={styles.effVal}>{monthStats.efficiency}%</span>
             </div>
             <div className={styles.effTrack}>
               <div
                 className={styles.effFill}
                 style={{
-                  width: `${efficiency}%`,
-                  background: efficiency >= 90 ? 'var(--green)' : efficiency >= 75 ? 'var(--amber)' : 'var(--red)',
+                  width: `${monthStats.efficiency}%`,
+                  background: monthStats.efficiency >= 90 ? 'var(--green)' : monthStats.efficiency >= 75 ? 'var(--amber)' : 'var(--red)',
                 }}
               />
             </div>

@@ -12,6 +12,7 @@ import {
 } from "../../components/UI/UI";
 import EmployeeProfileDrawer from "../../components/EmployeeProfileDrawer/EmployeeProfileDrawer";
 import styles from "./EmployeesPage.module.css";
+import { getAttendanceRatePercent } from "../../utils/attendance";
 
 const DEPTS = [
   "ALL",
@@ -167,32 +168,16 @@ function EmployeeFormModal({ employee, onClose }) {
           <div className={styles.attendanceTitle}>ATTENDANCE — THIS MONTH</div>
           <div className={styles.attendanceCols}>
             <FormField label="Present Days">
-              <Input
-                type="number"
-                value={form.present}
-                onChange={(e) => set("present", +e.target.value)}
-              />
+              <Input type="number" value={form.present} disabled />
             </FormField>
             <FormField label="Total Days">
-              {" "}
-              <Input
-                type="number"
-                value={form.total}
-                onChange={(e) => set("total", +e.target.value)}
-              />
+              <Input type="number" value={form.total} disabled />
             </FormField>
-            <FormField label="Overtime (h)">
+            <FormField label="Rate %">
               <Input
                 type="number"
-                value={form.overtime}
-                onChange={(e) => set("overtime", +e.target.value)}
-              />
-            </FormField>
-            <FormField label="Efficiency %">
-              <Input
-                type="number"
-                value={form.efficiency}
-                onChange={(e) => set("efficiency", +e.target.value)}
+                value={getAttendanceRatePercent(form.present, form.total)}
+                disabled
               />
             </FormField>
           </div>
@@ -585,7 +570,7 @@ export default function EmployeesPage() {
                           <div
                             className={styles.attFill}
                             style={{
-                              width: `${Math.round((emp.present / emp.total) * 100)}%`,
+                              width: `${getAttendanceRatePercent(emp.present, emp.total)}%`,
                               background:
                                 emp.efficiency >= 90
                                   ? "var(--green)"

@@ -10,6 +10,10 @@ import {
   Legend,
 } from "recharts";
 import { useApp } from "../../context/AppContext";
+import {
+  computeTeamAttendanceRate,
+  getAttendanceRatePercent,
+} from "../../utils/attendance";
 import { StatusBadge, Avatar, Button, Modal } from "../../components/UI/UI";
 import EmployeeProfileDrawer from "../../components/EmployeeProfileDrawer/EmployeeProfileDrawer";
 import styles from "./DashboardPage.module.css";
@@ -77,7 +81,7 @@ function KpiStrip() {
   const { employees, requests, gatePasses } = useApp();
   const total = employees.length;
   const active = employees.filter((e) => e.status === "ACTIVE").length;
-  const attRate = Math.round((active / total) * 1000) / 10;
+  const attRate = computeTeamAttendanceRate(employees);
   const pendGP = gatePasses.filter((g) => g.status === "PENDING").length;
   const pendReq = requests.filter((r) => r.status === "PENDING").length;
   return (
@@ -378,7 +382,7 @@ function RequestsPanel({ selectedType, onClearFilter }) {
     if (!req.person_id) return "—";
     const emp = employees.find((e) => String(e.id) === String(req.person_id));
     if (!emp || !emp.total) return "—";
-    return `${Math.round((emp.present / emp.total) * 100)}%`;
+    return `${getAttendanceRatePercent(emp.present, emp.total)}%`;
   };
 
   const handleApprove = async (req) => {
