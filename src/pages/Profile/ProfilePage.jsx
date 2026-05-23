@@ -212,7 +212,6 @@ export default function ProfilePage() {
   const fullName     = firstName && lastName ? `${firstName} ${lastName}` : storedUser?.name || currentUser?.name || "Unknown";
   const userEmail    = storedUser?.email      || currentUser?.email    || "—";
   const userPhone    = storedUser?.phone      || storedUser?.phone_number || currentUser?.phone || "—";
-  const userLocation = storedUser?.location   || currentUser?.location || "—";
   const userPosition = storedUser?.unit_name  || storedUser?.position  || storedUser?.department || "—";
   const userId       = storedUser?.id         || currentUser?.id       || "—";
   const numericId    = Number(storedUser?.id);
@@ -230,7 +229,6 @@ export default function ProfilePage() {
     { key: "id",       icon: <IDIcon />,       val: userId       },
     { key: "email",    icon: <EmailIcon />,    val: userEmail    },
     { key: "phone",    icon: <PhoneIcon />,    val: userPhone    },
-    { key: "location", icon: <LocationIcon />, val: userLocation },
     { key: "position", icon: <PositionIcon />, val: userPosition },
   ];
 
@@ -437,7 +435,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {editOpen && <EditProfileModal user={{ name: fullName, email: userEmail, phone: userPhone, location: userLocation }} onClose={() => setEditOpen(false)} />}
+      {editOpen && <EditProfileModal user={{ name: fullName, email: userEmail, phone: userPhone }} onClose={() => setEditOpen(false)} />}
       {pwdOpen  && <ChangePasswordModal onClose={() => setPwdOpen(false)} />}
     </div>
   );

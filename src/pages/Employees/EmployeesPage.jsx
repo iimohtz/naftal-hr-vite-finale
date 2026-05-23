@@ -214,7 +214,7 @@ function EmployeeFormModal({ employee, onClose }) {
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function EmployeesPage() {
   const { employees, addToast , currentUser, refreshUserContext} = useApp();
-  const isDirection = currentUser?.unit_type === 'direction'
+  const isDirection = currentUser?.unit_type === 'direction'||'admin'
   const token = localStorage.getItem("token");
   const handlePrintSlip = async (emp) => {
     // Always send the current month in YYYY-MM format
@@ -312,12 +312,13 @@ export default function EmployeesPage() {
       }
     )
     if (!res.ok) throw new Error('Failed')
-
+      console.log(res)
     // Directly update localStorage with the new adjoint from the persons list
     try {
       const list = JSON.parse(localStorage.getItem("list") || "[]");
       const person = list.find(p => String(p.id) === String(emp.id));
       if (person) {
+        
         localStorage.setItem("adjoint", JSON.stringify(person));
       }
     } catch (e) {
@@ -326,6 +327,7 @@ export default function EmployeesPage() {
 
     addToast(`${emp.name} set as Adjoint successfully.`)
   } catch {
+    
     addToast(`Failed to set ${emp.name} as Adjoint.`, 'error')
   }
 }
@@ -496,7 +498,7 @@ export default function EmployeesPage() {
                   "EMPLOYEE",
                   "UNIT",
                   "ROLE",
-                  "SHIFT",
+                  "",
                   "STATUS",
                   "ATTENDANCE",
                   "ACTIONS",
@@ -573,7 +575,6 @@ export default function EmployeesPage() {
                       <span className={styles.roleCell}>{emp.role}</span>
                     </td>
                     <td className={styles.td}>
-                      <span className={styles.shiftCell}>{emp.shift}</span>
                     </td>
                     <td className={styles.td}>
                       <StatusBadge status={emp.status} />

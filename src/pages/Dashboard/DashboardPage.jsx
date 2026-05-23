@@ -1131,10 +1131,10 @@ export default function DashboardPage() {
   const isAdjoint =
     String(currentUser?.id) === String(currentUser?.unit?.adjoint_id);
   const canApprove =
-    ["direction", "department", "service", "projet"].includes(unitType) && (isDirector || isAdjoint);
-  const canRequest = !["direction"].includes(unitType);
+    ["admin","direction", "department", "service", "projet"].includes(unitType) && (isDirector || isAdjoint);
+  const canRequest = !["direction","admin"].includes(unitType);
   const isDeptHead =
-    ["department", "direction"].includes(unitType) && (isDirector || isAdjoint);
+    ["admin","department", "direction"].includes(unitType) && (isDirector || isAdjoint);
 
   const [profileEmp, setProfileEmp] = useState(null);
   const [selectedDemandType, setSelectedDemandType] = useState(null);
@@ -1186,7 +1186,7 @@ export default function DashboardPage() {
         <div className={styles.col}>
           {isAdmin && <MyEmployees onViewEmployee={setProfileEmp} />}
           {canApprove && <DemandsChart onSliceClick={setSelectedDemandType} />}
-          {unitType === 'direction' && isDirector && <AdjointCard />}
+          {unitType === ('direction'||'admin') && isDirector && <AdjointCard />}
           <DocHubQuick />
         </div>
         <div className={styles.col}>
@@ -1199,7 +1199,6 @@ export default function DashboardPage() {
 
           {/* ← Department heads also see chef-approved requests ── */}
           {isDeptHead && <ApprovedByChefPanel onViewReq={setDetailReq} />}
-
           {canRequest && <GatePassesManager requests={myRequests} />}
         </div>
       </div>

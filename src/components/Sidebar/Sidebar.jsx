@@ -130,8 +130,7 @@ export default function Sidebar() {
   const isDirector = String(currentUser?.id) === String(currentUser?.unit?.director_id);
 
   const canAccessSettings = 
-    ["direction"].includes(currentUser?.unit_type) && 
-    isDirector;
+    ["admin"].includes(currentUser?.unit_type) 
 
   // ── Display name: prefer the normalized full name ──────────────
   // normalizeUser() sets .name = first_name + ' ' + last_name
