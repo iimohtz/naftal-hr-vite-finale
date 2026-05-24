@@ -9,7 +9,7 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
 } from "recharts";
-import { useApp } from "../../context/AppContext";
+import { useApp, ADMIN_IDS } from "../../context/AppContext";
 import {
   computeTeamAttendanceRate,
   getAttendanceRatePercent,
@@ -1167,7 +1167,9 @@ export default function DashboardPage() {
     String(currentUser?.id) === String(currentUser?.unit?.adjoint_id);
   const canApprove =
     ["admin","direction", "department", "service", "projet"].includes(unitType) && (isDirector || isAdjoint);
-  const canRequest = !["direction","admin"].includes(unitType);
+  const isSuperAdmin = ADMIN_IDS.includes(Number(currentUser?.id));
+  const isChefDirection = unitType === "direction" && isDirector;
+  const canRequest = !isSuperAdmin && !isChefDirection && unitType !== "admin";
   const isDeptHead =
     ["admin","department", "direction"].includes(unitType) && (isDirector || isAdjoint);
 
