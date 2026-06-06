@@ -31,6 +31,14 @@ function loadSettings() {
         parsed.holidays = []; 
       }
     }
+
+    // Convert plain strings from localStorage back to UI objects
+    if (Array.isArray(parsed.holidays)) {
+      parsed.holidays = parsed.holidays.map((h) =>
+        typeof h === "string" ? { date: h, label: "Holiday" } : h
+      );
+    }
+
     return parsed;
   } catch {
     return {};
@@ -45,7 +53,7 @@ export default function SettingsPage() {
   const [endWorkTime, setEndWorkTime] = useState(saved.endWorkTime || "16:30");
   const [saving, setSaving] = useState(false);
 
-  // ── Holidays state (Strictly enforced as an array) ────────────────
+  // ── Holidays state (Strictly enforced as an array of objects for the component UI) ────────────────
   const [holidays, setHolidays] = useState(() => {
     return Array.isArray(saved.holidays) ? saved.holidays : [];
   });
@@ -90,8 +98,11 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     const token = localStorage.getItem("token");
-    const settings = { lateThreshold, endWorkTime, holidays };
+    
+    // Convert components objects array to flat array strings for API payload
+    const holidaysPayload = holidays.map((h) => (typeof h === "object" ? h.date : h));
 
+    const settings = { lateThreshold, endWorkTime, holidays: holidaysPayload };
     localStorage.setItem("org_settings", JSON.stringify(settings));
 
     try {
@@ -105,7 +116,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           late_threshold: lateThreshold,
           end_work_time: endWorkTime,
-          holidays: holidays,
+          holidays: holidaysPayload,
         }),
       });
 
@@ -160,14 +171,24 @@ export default function SettingsPage() {
             }
           }
           
-          setHolidays(safeHolidays);
+          // Handle secondary parsing just in case it arrived double-stringified
+          if (typeof safeHolidays === "string") {
+            try { safeHolidays = JSON.parse(safeHolidays); } catch {}
+          }
+          
+          // Map parsed flat strings array to UI schema components expect
+          const formattedForUI = Array.isArray(safeHolidays)
+            ? safeHolidays.map((h) => typeof h === "string" ? { date: h, label: "Holiday" } : h)
+            : [];
+          
+          setHolidays(formattedForUI);
           
           localStorage.setItem(
             "org_settings",
             JSON.stringify({
               lateThreshold: dbLateThreshold,
               endWorkTime: dbEndWorkTime,
-              holidays: safeHolidays,
+              holidays: formattedForUI.map(h => h.date),
             }),
           );
         }
